@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { ScatterplotLayer, HeatmapLayer } from '@deck.gl/layers';
+import { ScatterplotLayer } from '@deck.gl/layers';
+import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { TripsLayer } from '@deck.gl/geo-layers';
 
 // SHARED
