@@ -7,7 +7,7 @@ import {
   Layers, Navigation, Wind, Leaf, History, Eye, Map as MapIcon, 
   MessageSquare, Camera, Droplets, Zap, Flame, Terminal, ShieldAlert,
   BarChart3, Globe, Activity, Bot, Send, LogOut, CloudRain, Sun, 
-  Settings2, Download, Database, Train
+  Settings2, Download, Database, Train, Megaphone, Hammer, TrendingUp, Heart
 } from 'lucide-react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -59,7 +59,7 @@ const generateAgents = () => {
     speed: 0.0008 + Math.random() * 0.0015,
     state: Math.random() > 0.5 ? 'commuting' : 'working',
     progress: Math.random(),
-    color: [0, 242, 255, 200]
+    color: [37, 99, 235, 200]
   }));
 };
 
@@ -69,14 +69,14 @@ const AdminDashboard = () => {
   const map = useRef(null);
   const assetToPlaceRef = useRef(null);
   
-  const [activeTab, setActiveTab] = useState('missions');
+  const [activeTab, setActiveTab] = useState('impact');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isDemolishMode, setIsDemolishMode] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [demolishedId, setDemolishedId] = useState(null);
   const [impactData, setImpactData] = useState(null);
-  const [currentStyle, setCurrentStyle] = useState('satellite');
+  const [currentStyle, setCurrentStyle] = useState('streets');
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [graphicsReady, setGraphicsReady] = useState(false);
@@ -112,6 +112,8 @@ const AdminDashboard = () => {
   const [showGodMode, setShowGodMode] = useState(false);
   const [isGodModeCollapsed, setIsGodModeCollapsed] = useState(false);
   const [isSentimentLoading, setIsSentimentLoading] = useState(false);
+  const [policyForm, setPolicyForm] = useState({ policy: '', price: '', location: '', purpose: '', prediction: '', duration: '' });
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [sentimentEnabled, setSentimentEnabled] = useState(false);
   const [sentimentData, setSentimentData] = useState(null);
   const [advisorQuery, setAdvisorQuery] = useState('');
@@ -132,9 +134,9 @@ const AdminDashboard = () => {
   };
 
   const [viewState, setViewState] = useState({
-    longitude: 77.5873,
-    latitude: 13.1287,
-    zoom: 15,
+    longitude: 77.5912,
+    latitude: 12.9797,
+    zoom: 14,
     pitch: 55,
     bearing: 0
   });
@@ -160,8 +162,8 @@ const AdminDashboard = () => {
         },
         layers: [
           { id: 'background', type: 'background', paint: { 'background-color': '#0a0b10' } },
-          { id: 'satellite-tiles', type: 'raster', source: 'google-satellite', layout: { visibility: 'visible' } },
-          { id: 'hybrid-tiles', type: 'raster', source: 'google-hybrid', layout: { visibility: 'none' } },
+          { id: 'hybrid-tiles', type: 'raster', source: 'google-hybrid', layout: { visibility: 'visible' } },
+          { id: 'satellite-tiles', type: 'raster', source: 'google-satellite', layout: { visibility: 'none' } },
           { id: 'street-tiles', type: 'raster', source: 'google-roads', layout: { visibility: 'none' } },
           {
             id: 'infra-layer',
@@ -193,10 +195,10 @@ const AdminDashboard = () => {
             type: 'fill-extrusion',
             source: 'buildings',
             paint: {
-              'fill-extrusion-color': '#222',
+              'fill-extrusion-color': '#f1f3f4',
               'fill-extrusion-height': ['coalesce', ['get', 'height'], 15],
               'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.8
+              'fill-extrusion-opacity': 0.9
             }
           },
           {
@@ -212,9 +214,9 @@ const AdminDashboard = () => {
           }
         ]
       },
-      center: [77.5873, 13.1287],
-      zoom: 15.5,
-      pitch: 65, // Increased pitch for better 3D depth
+      center: [77.5912, 12.9797],
+      zoom: 14,
+      pitch: 45, // Optimized for 3D city view
       antialias: true
     });
 
@@ -383,9 +385,9 @@ const AdminDashboard = () => {
     
     map.current.setPaintProperty('3d-buildings', 'fill-extrusion-color', [
       'case',
-      ['==', ['get', 'id'], selectedBuilding?.id], '#00f2ff',
+      ['==', ['get', 'id'], selectedBuilding?.id], '#2563eb',
       ['<', ['%', ['get', 'id'], 15], Number(floodLevel)], '#0061ff',
-      isXrayEnabled ? '#1a1c23' : (isGridLocked ? '#050608' : (isSat || isHybrid ? '#2a2d35' : '#e0e0e0'))
+      isXrayEnabled ? '#e2e8f0' : (isGridLocked ? '#cbd5e1' : (isSat || isHybrid ? '#2a2d35' : '#f1f5f9'))
     ]);
   }, [isXrayEnabled, currentStyle, mapLoaded, isStyleReady, selectedBuilding, isGridLocked, floodLevel]);
 
@@ -477,6 +479,20 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleBroadcastPolicy = async () => {
+    if (!policyForm.policy || !policyForm.price || !policyForm.location) return;
+    setIsBroadcasting(true);
+    try {
+      await axios.post('http://localhost:3001/api/notifications', policyForm);
+      setPolicyForm({ policy: '', price: '', location: '', purpose: '', prediction: '', duration: '' });
+      alert("POLICY BROADCAST SUCCESSFUL");
+    } catch (err) {
+      console.error(err);
+      alert("BROADCAST FAILURE");
+    }
+    setIsBroadcasting(false);
+  };
+
   const openStreetView = () => selectedBuilding && window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${selectedBuilding.lngLat.lat},${selectedBuilding.lngLat.lng}`, '_blank');
   
   const onDragStart = (e, type) => e.dataTransfer.setData('assetType', type);
@@ -493,6 +509,25 @@ const AdminDashboard = () => {
 
 
 
+  const [activeCategory, setActiveCategory] = useState(null);
+
+  // Groupings
+  const CATEGORIES = {
+    strategy: { label: 'STRATEGY', icon: Activity, features: [
+      { id: 'impact', label: 'Impact', icon: Zap },
+      { id: 'predict', label: 'Predict', icon: BarChart3 }
+    ]},
+    directives: { label: 'DIRECTIVES', icon: Bot, features: [
+      { id: 'advisor', label: 'Advisor', icon: Bot },
+      { id: 'broadcast', label: 'Broadcast', icon: Send },
+      { id: 'social', label: 'Social', icon: Globe }
+    ]},
+    infra: { label: 'INFRA', icon: Building2, features: [
+      { id: 'builder', label: 'Builder', icon: Navigation },
+      { id: 'crisis', label: 'Crisis', icon: ShieldAlert }
+    ]}
+  };
+
   return (
     <div className="app-root" onDragOver={e => e.preventDefault()} onDrop={onDrop}>
       <div ref={mapContainer} className="map-viewport" />
@@ -507,6 +542,7 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* SEARCH BAR */}
       <div className="search-container">
         <div className="search-box">
           <Search size={18} color="var(--accent)" />
@@ -515,153 +551,176 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* IDENTITY OVERLAY (Top Left) */}
-      <div className="side-panel" style={{ bottom: 'auto', width: 'auto', top: '1.5rem', left: '1.5rem', zIndex: 200 }}>
-        <div className="widget" style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(15,23,42,0.9)' }}>
+      <div className="side-panel">
+        {/* IDENTITY WIDGET */}
+        <div className="widget" style={{ padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.95)', borderBottom: '1px solid var(--glass-border)' }}>
           <ShieldAlert size={24} color="var(--accent)" />
           <div className="header-text">
-            <h2 style={{ fontSize: '0.9rem', fontWeight: 800 }}>ADMIN NEXUS</h2>
-            <span style={{ fontSize: '0.5rem', color: 'var(--success)', fontWeight: 900 }}>CMD_ROOT_ACCESS</span>
+            <h2 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '1px' }}>ADMIN NEXUS</h2>
+            <span style={{ fontSize: '0.5rem', color: 'var(--success)', fontWeight: 900 }}>CMD_ROOT_ACCESS_v4.0</span>
           </div>
         </div>
-      </div>
 
-      {/* MODULAR FEATURE OVERLAYS (Dedicated Scrollable Pages) */}
-      {activeTab && (
-        <div className="feature-overlay">
-          <div className="overlay-widget">
-            <div className="overlay-header">
-              <h3 style={{ fontSize: '0.75rem', letterSpacing: '2px', color: 'var(--accent)' }}>{activeTab.toUpperCase()} MODULE</h3>
-              <button className="close-overlay" onClick={() => setActiveTab(null)}><X size={14} /></button>
-            </div>
+        {/* FULL FEATURE STACK (Dynamic based on Category) */}
+        <div className="widget content-widget" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', borderLeft: '1px solid var(--accent-glass)' }}>
+          <div className="scroll-area" style={{ flex: 1, padding: '1rem' }}>
+            
+            {!activeCategory && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.5, textAlign: 'center' }}>
+                <Terminal size={40} color="var(--accent)" style={{ marginBottom: '1rem' }} />
+                <span className="section-label">SYSTEM_READY</span>
+                <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>SELECT CATEGORY FROM COMMAND DOCK</p>
+              </div>
+            )}
 
-            <div className="scroll-area">
-              {activeTab === 'impact' && (
-                <div className="control-group">
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
-                    Simulate structural integrity failures and urban decay patterns across selected districts.
-                  </p>
-                  <button className={`action-btn ${isDemolishMode ? 'active' : ''}`} onClick={() => setIsDemolishMode(!isDemolishMode)}>
-                    {isDemolishMode ? 'HALT SIMULATION' : 'INITIALIZE IMPACT'}
-                  </button>
-                  <div className="widget" style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.03)' }}>
-                    <span className="section-label">CITY SCORECARD</span>
+            {activeCategory === 'strategy' && (
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                {/* 1. IMPACT & SCORECARD */}
+                <div className="panel-section" style={{ marginBottom: '2rem' }}>
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <Zap size={14} /> STRATEGIC IMPACT ANALYSIS
+                  </span>
+                  <div className="widget" style={{ padding: '1rem', background: 'rgba(0,242,255,0.02)', border: '1px solid var(--accent-glass)', marginBottom: '1rem', marginTop: '1rem' }}>
                     {Object.entries(scorecard).map(([k, v]) => (
                       <div key={k} className="score-item" style={{ marginTop: '0.75rem' }}>
-                        <div className="score-label" style={{ fontSize: '0.65rem' }}>
-                          <span>{k.toUpperCase()}</span>
-                          <span>{v}%</span>
-                        </div>
-                        <div className="score-bar" style={{ height: '4px' }}>
-                          <div className={`fill ${k === 'environmental' ? 'green' : k === 'social' ? 'blue' : 'yellow'}`} style={{ width: `${v}%` }} />
-                        </div>
+                        <div className="score-label" style={{ fontSize: '0.6rem', fontWeight: 800 }}><span>{k.toUpperCase()}</span><span>{v}%</span></div>
+                        <div className="score-bar" style={{ height: '4px', background: 'rgba(255,255,255,0.05)' }}><div className={`fill ${k === 'environmental' ? 'green' : k === 'social' ? 'blue' : 'yellow'}`} style={{ width: `${v}%`, boxShadow: `0 0 10px var(--${k === 'environmental' ? 'success' : k === 'social' ? 'accent' : 'warning'})` }} /></div>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {activeTab === 'predict' && (
-                <div className="control-group">
-                  <label className="section-label">STORM INTENSITY: {stormIntensity}</label>
-                  <input type="range" min="1" max="10" value={stormIntensity} onChange={e => setStormIntensity(Number(e.target.value))} className="flood-slider" />
-                  <button className="action-btn" onClick={handlePredictFailures} style={{ marginTop: '1.5rem' }}>
-                    {isPredicting ? <Loader2 className="spin" size={16} /> : 'RUN PROJECTION'}
+                  <button className={`action-btn ${isDemolishMode ? 'active' : ''}`} onClick={() => setIsDemolishMode(!isDemolishMode)}>
+                    {isDemolishMode ? 'HALT SIMULATION' : 'INITIALIZE IMPACT ANALYSIS'}
                   </button>
                 </div>
-              )}
 
-              {activeTab === 'advisor' && (
-                <div className="advisor-panel">
-                  <div className="advisor-chat" style={{ height: '300px', overflowY: 'auto', marginBottom: '1.25rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '16px' }}>
+                {/* 2. PREDICTIVE ANALYSIS */}
+                <div className="panel-section">
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <TrendingUp size={14} /> PREDICTIVE PROJECTION
+                  </span>
+                  <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                    <label className="section-label" style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>STORM_INTENSITY_INDEX: {stormIntensity}</label>
+                    <input type="range" min="1" max="10" value={stormIntensity} onChange={e => setStormIntensity(Number(e.target.value))} className="flood-slider" />
+                    <button className="action-btn" onClick={handlePredictFailures} style={{ marginTop: '1.25rem' }}>
+                      {isPredicting ? <Loader2 className="spin" size={14} /> : 'RUN FAILURE PROJECTION'}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {activeCategory === 'directives' && (
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                {/* 3. AI ADVISOR */}
+                <div className="panel-section" style={{ marginBottom: '2rem' }}>
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <Bot size={14} /> NEXUS AI ADVISOR
+                  </span>
+                  <div className="advisor-chat" style={{ height: '180px', overflowY: 'auto', marginBottom: '1rem', marginTop: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px', border: '1px solid var(--glass-border)', fontSize: '0.7rem' }}>
                     {advisorLog.map((m, i) => (
-                      <div key={i} style={{ marginBottom: '1rem', fontSize: '0.75rem', color: m.role === 'ai' ? 'var(--accent)' : '#fff' }}>
-                        <strong>{m.role === 'ai' ? 'NEXUS' : 'ADMIN'}:</strong> {m.content}
+                      <div key={i} style={{ marginBottom: '0.75rem', padding: '0.5rem', borderRadius: '8px', background: m.role === 'ai' ? 'rgba(37,99,235,0.05)' : 'rgba(0,0,0,0.03)' }}>
+                        <strong style={{ color: m.role === 'ai' ? 'var(--accent)' : 'var(--text-secondary)', fontSize: '0.6rem' }}>{m.role === 'ai' ? 'NEXUS_OS' : 'COMMANDER'}:</strong>
+                        <p style={{ marginTop: '0.25rem', color: 'var(--text-primary)' }}>{m.content}</p>
                       </div>
                     ))}
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input className="chat-field" value={advisorQuery} onChange={e => setAdvisorQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAskAdvisor()} placeholder="Request directive..." style={{ flex: 1, padding: '0.75rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: '#fff', fontSize: '0.75rem' }} />
-                    <button className="action-btn" onClick={handleAskAdvisor} style={{ width: '40px', padding: 0 }}><Send size={14} /></button>
+                    <input className="chat-field" value={advisorQuery} onChange={e => setAdvisorQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAskAdvisor()} placeholder="QUERY SYSTEM..." style={{ flex: 1, padding: '0.75rem', background: 'rgba(0,0,0,0.03)', borderRadius: '10px', fontSize: '0.7rem', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }} />
+                    <button className="action-btn" onClick={handleAskAdvisor} style={{ width: '45px', padding: 0 }}><Send size={16} /></button>
                   </div>
                 </div>
-              )}
 
-              {activeTab === 'builder' && (
-                <div className="builder-panel">
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                {/* 6. GLOBAL BROADCAST */}
+                <div className="panel-section" style={{ marginBottom: '2rem' }}>
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <Megaphone size={14} /> STRATEGIC BROADCAST
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginTop: '1rem', padding: '1rem', background: 'rgba(0,242,255,0.02)', borderRadius: '12px' }}>
+                    <input className="chat-mini" placeholder="POLICY_TITLE" value={policyForm.policy} onChange={e => setPolicyForm({...policyForm, policy: e.target.value})} />
+                    <textarea className="chat-mini" placeholder="STRATEGIC_PURPOSE_BRIEF" value={policyForm.purpose} onChange={e => setPolicyForm({...policyForm, purpose: e.target.value})} style={{ minHeight: '60px' }} />
+                    <button className="action-btn" onClick={handleBroadcastPolicy} disabled={isBroadcasting} style={{ background: 'var(--success)' }}>
+                      {isBroadcasting ? <Loader2 className="spin" size={14} /> : 'DEPLOY CITY_WIDE DIRECTIVE'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 7. SOCIAL SENTIMENT */}
+                <div className="panel-section">
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <Heart size={14} /> CITIZEN SENTIMENT PULSE
+                  </span>
+                  <button className="action-btn" onClick={handleFetchSentiment} disabled={isSentimentLoading} style={{ marginTop: '1rem' }}>
+                    {isSentimentLoading ? <Loader2 className="spin" size={16} /> : 'ANALYZE REAL-TIME MOOD'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {activeCategory === 'infra' && (
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                {/* 4. BUILDER MODE */}
+                <div className="panel-section" style={{ marginBottom: '2rem' }}>
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <Hammer size={14} /> ARCHITECTURAL BUILDER
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginTop: '1rem' }}>
                     {Object.entries(ASSET_TEMPLATES).map(([name, asset]) => (
-                      <div key={name} className={`asset-card widget ${assetToPlace === name ? 'active' : ''}`} onClick={() => setAssetToPlace(name)} style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', border: assetToPlace === name ? '1px solid var(--accent)' : '1px solid transparent' }}>
-                        <div style={{ marginBottom: '0.5rem' }}>{asset.icon}</div>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>{name}</span>
+                      <div key={name} className={`asset-card widget ${assetToPlace === name ? 'active' : ''}`} onClick={() => setAssetToPlace(name)} style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', border: assetToPlace === name ? '1px solid var(--accent)' : '1px solid var(--glass-border)', background: assetToPlace === name ? 'var(--accent-glass)' : 'rgba(255,255,255,0.02)' }}>
+                        <div style={{ marginBottom: '0.5rem', color: assetToPlace === name ? 'var(--accent)' : 'var(--text-secondary)' }}>{asset.icon}</div>
+                        <span style={{ fontSize: '0.6rem', fontWeight: 900, letterSpacing: '1px' }}>{name.toUpperCase()}</span>
                       </div>
                     ))}
                   </div>
-                  {placedAssets.length > 0 && (
-                    <div className="construction-log">
-                      <span className="section-label">ACTIVE PROJECTS ({placedAssets.length})</span>
-                      {placedAssets.map(asset => (
-                        <div key={asset.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', fontSize: '0.7rem', marginTop: '0.5rem' }}>
-                          <span>{asset.type}</span>
-                          <button onClick={() => setPlacedAssets(prev => prev.filter(a => a.id !== asset.id))} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontWeight: 800 }}>DEMOLISH</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              )}
 
-              {activeTab === 'crisis' && (
-                <div className="control-group">
-                  <label className="section-label">FLOOD MODEL: {floodLevel}M</label>
-                  <input type="range" min="0" max="15" value={floodLevel} onChange={e => setFloodLevel(Number(e.target.value))} className="flood-slider" />
-                  <div style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <button className={`tab-btn ${showHydrants ? 'active' : ''}`} onClick={() => setShowHydrants(!showHydrants)}>HYDRANTS</button>
-                    <button className={`tab-btn ${isEmergencyActive ? 'active' : ''}`} onClick={() => setIsEmergencyActive(!isEmergencyActive)}>EMS HUB</button>
+                {/* 5. CRISIS CONTROL */}
+                <div className="panel-section">
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <ShieldAlert size={14} /> CRISIS_RESPONSE_HUB
+                  </span>
+                  <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(239,68,68,0.05)', borderRadius: '12px', border: '1px solid rgba(239,68,68,0.1)' }}>
+                    <label className="section-label" style={{ fontSize: '0.6rem', color: 'var(--danger)' }}>SIMULATED_FLOOD_DEPTH: {floodLevel}M</label>
+                    <input type="range" min="0" max="15" value={floodLevel} onChange={e => setFloodLevel(Number(e.target.value))} className="flood-slider" style={{ background: 'rgba(239,68,68,0.2)' }} />
+                    <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <button className={`tab-btn ${showHydrants ? 'active' : ''}`} onClick={() => setShowHydrants(!showHydrants)} style={{ fontSize: '0.6rem' }}>HYDRANTS</button>
+                      <button className={`tab-btn ${isEmergencyActive ? 'active' : ''}`} onClick={() => setIsEmergencyActive(!isEmergencyActive)} style={{ fontSize: '0.6rem' }}>EMS_UNIT</button>
+                    </div>
                   </div>
                 </div>
-              )}
+              </motion.div>
+            )}
 
-              {activeTab === 'social' && (
-                <div className="social-panel">
-                  <button className="action-btn" onClick={handleFetchSentiment} disabled={isSentimentLoading} style={{ marginBottom: '1rem' }}>
-                    {isSentimentLoading ? <Loader2 className="spin" size={16} /> : 'FETCH SENTIMENT'}
-                  </button>
-                  <button className="action-btn" onClick={() => setShowReportingHint(true)}>REPORT ISSUE</button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* DOCK (Matching Screenshot Design) */}
+      {/* COMPACT DOCK (Hierarchical) */}
       <div className="bottom-dock">
         <div className="dock-section">
-          {[
-            { id: 'impact', icon: Zap, label: 'IMPACT' },
-            { id: 'predict', icon: Activity, label: 'PREDICT' },
-            { id: 'advisor', icon: Bot, label: 'ADVISOR' },
-            { id: 'builder', icon: Navigation, label: 'BUILDER' },
-            { id: 'crisis', icon: ShieldAlert, label: 'CRISIS' },
-            { id: 'social', icon: Globe, label: 'SOCIAL' }
-          ].map(t => (
-            <button key={t.id} className={`dock-btn ${activeTab === t.id ? 'active' : ''}`} onClick={() => setActiveTab(activeTab === t.id ? null : t.id)}>
-              <t.icon size={18} />
-              <span>{t.label}</span>
+          {Object.entries(CATEGORIES).map(([id, cat]) => (
+            <button 
+              key={id} 
+              className={`dock-btn ${activeCategory === id ? 'active' : ''}`} 
+              onClick={() => { 
+                if (activeCategory === id) {
+                  setActiveCategory(null);
+                } else {
+                  setActiveCategory(id);
+                }
+              }}
+            >
+              <cat.icon size={18} />
+              <span>{cat.label}</span>
             </button>
           ))}
         </div>
 
         <div className="dock-section">
-          <button className={`dock-btn ${showGodMode ? 'active' : ''}`} onClick={() => setShowGodMode(!showGodMode)}>
-            <Settings2 size={18} /><span>GOD MODE</span>
-          </button>
           <button className={`dock-btn ${isXrayEnabled ? 'active' : ''}`} onClick={() => setIsXrayEnabled(!isXrayEnabled)}>
             <Eye size={18} /><span>X-RAY</span>
           </button>
           <button className="dock-btn" onClick={() => {
-              const styles = ['satellite', 'hybrid', 'streets'];
+              const styles = ['streets', 'hybrid', 'satellite'];
               const nextIndex = (styles.indexOf(currentStyle) + 1) % styles.length;
               setCurrentStyle(styles[nextIndex]);
             }}>
@@ -672,27 +731,6 @@ const AdminDashboard = () => {
           </button>
         </div>
       </div>
-
-      {showGodMode && (
-        <div className="feature-overlay secondary" style={{ left: 'auto', right: '1.5rem', top: '1.5rem', width: '300px' }}>
-          <div className="overlay-widget">
-            <h3 style={{ fontSize: '0.75rem', letterSpacing: '2px', marginBottom: '1.5rem' }}>COMMAND OVERRIDE</h3>
-            <div className="toggle-row">
-              <span>GLOBAL GRID LOCK</span>
-              <button className={`toggle-sm ${isGridLocked ? 'on' : ''}`} onClick={() => setIsGridLocked(!isGridLocked)} />
-            </div>
-            <div className="toggle-row" style={{ marginTop: '1rem' }}>
-              <span>ATMOSPHERIC RAIN</span>
-              <button className={`toggle-sm ${isRainy ? 'on' : ''}`} onClick={() => setIsRainy(!isRainy)} />
-            </div>
-            <div style={{ marginTop: '1.5rem' }}>
-              <label className="section-label">SMOG DENSITY</label>
-              <input type="range" min="0" max="0.8" step="0.1" value={smogLevel} onChange={e => setSmogLevel(Number(e.target.value))} className="flood-slider" />
-            </div>
-            <button className="action-btn" onClick={() => setShowGodMode(false)} style={{ marginTop: '2rem' }}>CLOSE</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
