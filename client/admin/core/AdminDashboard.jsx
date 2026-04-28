@@ -12,11 +12,11 @@ import { updateAgents } from '../shared/utils/simulation';
 import { generateAgents } from '../shared/utils/agentGenerator';
 
 // ADMIN SPECIFIC
-import AdminSidebar from './components/AdminSidebar';
-import AdminDock from './components/AdminDock';
-import PublicRequestDossier from './components/PublicRequestDossier';
-import ScenarioBattle from './components/ScenarioBattle';
-import { ASSET_TEMPLATES } from './utils/constants';
+import AdminSidebar from '../components/AdminSidebar';
+import AdminDock from '../components/AdminDock';
+import PublicRequestDossier from '../components/PublicRequestDossier';
+import ScenarioBattle from '../components/ScenarioBattle';
+import { ASSET_TEMPLATES } from '../utils/constants';
 
 const AdminDashboard = () => {
   const router = useRouter();

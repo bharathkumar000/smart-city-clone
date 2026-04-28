@@ -12,9 +12,9 @@ import { updateAgents } from '../shared/utils/simulation';
 import { generateAgents } from '../shared/utils/agentGenerator';
 
 // USER SPECIFIC
-import UserSidebar from './components/UserSidebar';
-import UserDock from './components/UserDock';
-import NotificationBar from './components/NotificationBar';
+import UserSidebar from '../components/UserSidebar';
+import UserDock from '../components/UserDock';
+import NotificationBar from '../components/NotificationBar';
 
 const UserDashboard = () => {
   const router = useRouter();
