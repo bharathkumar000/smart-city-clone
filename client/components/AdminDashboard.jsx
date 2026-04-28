@@ -137,12 +137,23 @@ const AdminDashboard = () => {
   const [activeSmartZones, setActiveSmartZones] = useState(true);
 
   const ASSET_TEMPLATES = {
-    'Skyscraper': { height: 60, color: '#3c4043', impacts: { economic: 15, social: 5, environmental: -10 }, icon: <Building2 size={24}/> },
-    'Urban Park': { height: 2, color: '#00ff9d', impacts: { economic: -5, social: 15, environmental: 25 }, icon: <Leaf size={24}/> },
-    'Flyover': { height: 12, color: '#ffa600', impacts: { economic: 20, social: 10, environmental: -8 }, icon: <Navigation size={24}/> },
-    'Road Exp.': { height: 1, color: '#555', impacts: { economic: 12, social: 5, environmental: -12 }, icon: <Zap size={24}/> },
-    'Metro Station': { height: 15, color: '#00ffcc', impacts: { economic: 25, social: 18, environmental: 5 }, icon: <Train size={24}/> },
-    'Solar Hub': { height: 5, color: '#ffcc00', impacts: { economic: 12, social: 2, environmental: 35 }, icon: <Zap size={24}/> }
+    // --- BUILDINGS ---
+    'Residential': { group: 'Buildings', height: 15, color: '#94a3b8', impacts: { economic: 10, social: 15, environmental: -5 }, icon: <Building2 size={24}/> },
+    'Commercial': { group: 'Buildings', height: 35, color: '#64748b', impacts: { economic: 25, social: 8, environmental: -12 }, icon: <Building2 size={24}/> },
+    'Hospital': { group: 'Buildings', height: 20, color: '#ef4444', impacts: { economic: 5, social: 30, environmental: 0 }, icon: <Heart size={24}/> },
+    'Skyscraper': { group: 'Buildings', height: 80, color: '#1e293b', impacts: { economic: 45, social: 10, environmental: -20 }, icon: <Activity size={24}/> },
+    
+    // --- TRANSPORT ---
+    'Highway': { group: 'Transport', height: 1, color: '#334155', impacts: { economic: 30, social: -5, environmental: -15 }, icon: <Navigation size={24}/> },
+    'Flyover': { group: 'Transport', height: 12, color: '#fbbf24', impacts: { economic: 20, social: 10, environmental: -8 }, icon: <Zap size={24}/> },
+    'Metro Station': { group: 'Transport', height: 18, color: '#06b6d4', impacts: { economic: 35, social: 25, environmental: 8 }, icon: <Train size={24}/> },
+    'Metro Line (UG)': { group: 'Transport', height: -10, color: '#0891b2', impacts: { economic: 40, social: 20, environmental: 12 }, icon: <Train size={24}/> },
+    'Bus Stop': { group: 'Transport', height: 3, color: '#10b981', impacts: { economic: 8, social: 15, environmental: 5 }, icon: <Navigation size={24}/> },
+    'Road Exp.': { group: 'Transport', height: 1, color: '#475569', impacts: { economic: 12, social: 5, environmental: -12 }, icon: <Zap size={24}/> },
+
+    // --- ENVIRONMENT & ENERGY ---
+    'Urban Park': { group: 'Energy', height: 2, color: '#22c55e', impacts: { economic: -5, social: 25, environmental: 40 }, icon: <Leaf size={24}/> },
+    'Solar Hub': { group: 'Energy', height: 5, color: '#f59e0b', impacts: { economic: 15, social: 2, environmental: 50 }, icon: <Zap size={24}/> }
   };
 
   const [viewState, setViewState] = useState({
@@ -761,13 +772,36 @@ const AdminDashboard = () => {
                   <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
                     <Hammer size={14} /> ARCHITECTURAL BUILDER
                   </span>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginTop: '1rem' }}>
-                    {Object.entries(ASSET_TEMPLATES).map(([name, asset]) => (
-                      <div key={name} className={`asset-card widget ${assetToPlace === name ? 'active' : ''}`} onClick={() => setAssetToPlace(name)} style={{ padding: '1rem', textAlign: 'center', cursor: 'pointer', border: assetToPlace === name ? '1px solid var(--accent)' : '1px solid var(--glass-border)', background: assetToPlace === name ? 'var(--accent-glass)' : 'rgba(255,255,255,0.02)' }}>
-                        <div style={{ marginBottom: '0.5rem', color: assetToPlace === name ? 'var(--accent)' : 'var(--text-secondary)' }}>{asset.icon}</div>
-                        <span style={{ fontSize: '0.6rem', fontWeight: 900, letterSpacing: '1px' }}>{name.toUpperCase()}</span>
+                  
+                  {['Buildings', 'Transport', 'Energy'].map(groupName => (
+                    <div key={groupName} style={{ marginTop: '1.5rem' }}>
+                      <h4 style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', letterSpacing: '1px', fontWeight: 900, marginBottom: '0.75rem' }}>{groupName.toUpperCase()}</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                        {Object.entries(ASSET_TEMPLATES).filter(([_, a]) => a.group === groupName).map(([name, asset]) => (
+                          <div 
+                            key={name} 
+                            draggable 
+                            onDragStart={(e) => onDragStart(e, name)}
+                            className={`asset-card widget ${assetToPlace === name ? 'active' : ''}`} 
+                            onClick={() => setAssetToPlace(name)} 
+                            style={{ 
+                              padding: '1rem', 
+                              textAlign: 'center', 
+                              cursor: 'grab', 
+                              border: assetToPlace === name ? '1px solid var(--accent)' : '1px solid var(--glass-border)', 
+                              background: assetToPlace === name ? 'var(--accent-glass)' : 'rgba(255,255,255,0.02)',
+                              transition: 'all 0.2s ease'
+                            }}>
+                            <div style={{ marginBottom: '0.5rem', color: assetToPlace === name ? 'var(--accent)' : 'var(--text-secondary)' }}>{asset.icon}</div>
+                            <span style={{ fontSize: '0.55rem', fontWeight: 900, letterSpacing: '0.5px' }}>{name.toUpperCase()}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                  
+                  <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(37,99,235,0.05)', borderRadius: '12px', border: '1px dashed var(--accent-glass)', textAlign: 'center' }}>
+                    <p style={{ fontSize: '0.6rem', color: 'var(--accent)', fontWeight: 700 }}>TIP: DRAG ASSETS DIRECTLY ONTO MAP</p>
                   </div>
                 </div>
               </motion.div>

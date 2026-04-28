@@ -125,19 +125,49 @@ app.use((req, res, next) => {
   res.redirect('http://localhost:9000' + req.path);
 });
 
-// Policy Advisor (P.I.S.E. GPT) Endpoint
-app.post('/api/policy-advisor', (req, res) => {
+// Policy Advisor (P.I.S.E. GPT) Endpoint with OLLAMA Integration
+app.post('/api/policy-advisor', async (req, res) => {
   const { query } = req.body;
   
   if (!query) return res.status(400).json({ error: 'No query provided' });
 
-  // Simulation logic for LLM Analysis
+  try {
+    // Attempt to call local Ollama API
+    const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemma4:e4b',
+        prompt: `You are the "Bengaluru Nexus Policy Advisor", a high-fidelity AI specialized in urban planning, fiscal analysis, and social engineering for the city of Bengaluru. 
+        
+        User Query: "${query}"
+        
+        Provide a professional command-center report including:
+        1. PROJECT OVERVIEW
+        2. FISCAL METRICS (Projected costs in Crores)
+        3. SOCIAL IMPACT (Sentiment and public safety)
+        4. STRATEGIC VERDICT (Proceed/Risk)
+        
+        Keep the tone tactical and data-driven. Use Markdown formatting.`,
+        stream: false
+      })
+    });
+
+    if (ollamaResponse.ok) {
+      const data = await ollamaResponse.json();
+      return res.json({ report: data.response });
+    }
+  } catch (err) {
+    console.warn("Ollama not detected on localhost:11434. Falling back to mock simulation.");
+  }
+
+  // Simulation logic for LLM Analysis (Fallback)
   const q = query.toLowerCase();
   let analysis = "";
 
   if (q.includes('flyover') || q.includes('bridge')) {
     analysis = `
-### 🏗️ PROJECT: URBAN FLYOVER INITIATIVE
+### 🏗️ PROJECT: URBAN FLYOVER INITIATIVE (FALLBACK)
 **Location Identified**: JLB Road / Major Arterial Intersection
 
 #### 💰 FISCAL METRICS
@@ -154,40 +184,55 @@ app.post('/api/policy-advisor', (req, res) => {
 - **Black Swan Risk**: Utility displacement during construction could trigger city-wide grid instability for 48 hours.
 - **Recommendation**: Proceed with **Phase 1 Sub-surface cabling** before structural piling.
     `;
-  } else if (q.includes('flood') || q.includes('drainage')) {
-    analysis = `
-### 🌊 CRISIS MITIGATION: DRAINAGE OVERHAUL
-**Context**: Monsoon Resilience Strategy
-
-#### 💰 FISCAL METRICS
-- **Initial Outlay**: ₹80 Crores
-- **Averted Loss**: ₹350 Crores in potential flood damage (10-year horizon)
-
-#### 👥 SOCIAL IMPACT
-- **Public Safety**: 🟢 Critical Improvement (90% reduction in low-lying area inundation)
-- **Displacement**: 🟡 Moderate (Requires temporary relocation of 120 informal settlements)
-
-#### 🛡️ STRATEGIC VERDICT
-- **P.I.S.E. Recommendation**: **Priority Level: Alpha**. Immediate integration with the 3D Flood Inundation model required.
-    `;
   } else {
     analysis = `
-### 🧠 GENERAL POLICY ANALYSIS
+### 🧠 GENERAL POLICY ANALYSIS (FALLBACK)
 **Query**: "${query}"
 
 #### 📊 INITIAL HEURISTICS
 - **Complexity Level**: Moderate
-- **Multi-Sectoral Ripple**: Detected (Transport ↔ Economy ↔ Environment)
+- **Status**: Ollama Engine [gemma4:e4b] Offline.
 
 #### 🔍 ADVISORY NOTE
-The SYNTH-GOV engine requires more specific geospatial anchors to provide a high-fidelity fiscal report. Please specify a Ward number or Landmark.
+The SYNTH-GOV engine requires the local Ollama service to be active for high-fidelity analysis. Please ensure "ollama run gemma4:e4b" is available.
     `;
   }
 
-  // Simulate AI delay
   setTimeout(() => {
     res.json({ report: analysis });
-  }, 1500);
+  }, 1000);
+});
+
+// AI Suggest Engine (Advanced Urban Directives)
+app.post('/api/ai-suggest', async (req, res) => {
+  const { priority, assets } = req.body;
+  
+  try {
+    const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemma4:e4b',
+        prompt: `You are the "Bengaluru Nexus Strategic AI". 
+        Current Priority: ${priority.toUpperCase()}
+        Current City Assets: ${JSON.stringify(assets)}
+        
+        Provide ONE short, highly tactical urban planning suggestion (max 20 words) to optimize the city according to the priority.
+        Format: Return only the text of the suggestion.`,
+        stream: false
+      })
+    });
+
+    if (ollamaResponse.ok) {
+      const data = await ollamaResponse.json();
+      return res.json({ suggestion: data.response });
+    }
+  } catch (err) {
+    console.warn("Ollama suggest fallback.");
+  }
+
+  const fallbacks = ["Optimize traffic flow at MG Road junction.", "Increase solar density in residential zones.", "Deploy emergency units to high-risk flood areas."];
+  res.json({ suggestion: fallbacks[Math.floor(Math.random() * fallbacks.length)] });
 });
 
 // Predictive Failure Analysis Endpoint
