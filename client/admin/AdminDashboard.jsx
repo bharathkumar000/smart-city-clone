@@ -955,8 +955,6 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      </AnimatePresence>
-
       {/* FEATURE 8: EXPLAINABLE AI INFO PANEL */}
       <AnimatePresence>
         {explanationData && (

@@ -1,5 +1,5 @@
 'use client';
-import UserDashboard from '../../components/UserDashboard';
+import UserDashboard from '../../user/UserDashboard';
 
 export default function User() {
   return <UserDashboard />;
