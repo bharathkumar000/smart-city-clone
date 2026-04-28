@@ -203,8 +203,7 @@ const AdminSidebar = ({
                       }}>
                         {assets.map(([name, asset]) => {
                           const isActive = assetToPlace === name;
-                          return (
-                            <div 
+                                                      <div 
                               key={name} 
                               draggable 
                               onDragStart={(e) => onDragStart(e, name)} 
@@ -213,6 +212,7 @@ const AdminSidebar = ({
                               style={{ 
                                 aspectRatio: '1/1',
                                 display: 'flex',
+                                flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 cursor: 'grab', 
@@ -224,7 +224,8 @@ const AdminSidebar = ({
                                 outline: isActive ? '2px solid #FFFFFF' : 'none',
                                 outlineOffset: '-2px',
                                 position: 'relative',
-                                zIndex: isActive ? 10 : 1
+                                zIndex: isActive ? 10 : 1,
+                                padding: '2px'
                               }}
                               onMouseEnter={(e) => {
                                 if (!isActive) e.currentTarget.style.background = '#999999';
@@ -236,13 +237,28 @@ const AdminSidebar = ({
                               {isActive && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.2)' }} />}
                               <div style={{ 
                                 color: '#373737', 
-                                transform: isActive ? 'scale(1.2)' : 'scale(1)',
+                                transform: isActive ? 'scale(1.1)' : 'scale(1)',
                                 transition: 'transform 0.1s',
-                                filter: 'drop-shadow(1px 1px 0px rgba(255,255,255,0.5))'
+                                filter: 'drop-shadow(1px 1px 0px rgba(255,255,255,0.5))',
+                                marginBottom: '2px'
                               }}>
                                 {asset.icon}
                               </div>
+                              <span style={{ 
+                                fontSize: '0.35rem', 
+                                fontWeight: 'bold', 
+                                color: '#373737', 
+                                textAlign: 'center',
+                                lineClamp: 1,
+                                overflow: 'hidden',
+                                width: '100%',
+                                pointerEvents: 'none',
+                                textShadow: '0.5px 0.5px 0px rgba(255,255,255,0.5)'
+                              }}>
+                                {name.split('-')[0].toUpperCase()}
+                              </span>
                             </div>
+  </div>
                           );
                         })}
                         {Array.from({ length: emptySlots }).map((_, i) => (
