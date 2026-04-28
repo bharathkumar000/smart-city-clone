@@ -33,6 +33,7 @@ const AdminDashboard = () => {
   const [isXrayEnabled, setIsXrayEnabled] = useState(false);
   const [isSplitScreen, setIsSplitScreen] = useState(false);
   const [activeSmartZones, setActiveSmartZones] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   const [agents, setAgents] = useState(generateAgents());
   const [time, setTime] = useState(0);
@@ -171,6 +172,8 @@ const AdminDashboard = () => {
         publicRequests={publicRequests}
         setSelectedRequest={setSelectedRequest}
         mapRef={mapRef}
+        isSidebarCollapsed={isSidebarCollapsed}
+        setIsSidebarCollapsed={setIsSidebarCollapsed}
       />
 
       <AdminDock 
@@ -185,6 +188,7 @@ const AdminDashboard = () => {
         setIsSplitScreen={setIsSplitScreen}
         activeSmartZones={activeSmartZones}
         setActiveSmartZones={setActiveSmartZones}
+        setIsSidebarCollapsed={setIsSidebarCollapsed}
       />
 
       <PublicRequestDossier 
