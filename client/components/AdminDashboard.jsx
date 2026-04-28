@@ -442,8 +442,6 @@ const AdminDashboard = () => {
     }
 
     const newScore = placedAssets.reduce((acc, a) => ({
-
-    const newScore = placedAssets.reduce((acc, a) => ({
       economic: acc.economic + a.impacts.economic,
       social: acc.social + a.impacts.social,
       environmental: acc.environmental + a.impacts.environmental
