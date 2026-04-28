@@ -109,18 +109,20 @@ app.get('/api/proximity-search', async (req, res) => {
   }
 });
 
-const distPath = path.join(__dirname, '../client/dist');
-console.log(`Serving static files from: ${distPath}`);
-app.use(express.static(distPath));
-
+// PORT REDIRECT: Ensure users go to the Next.js unified portal (9000) instead of the raw API port (3001)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
+  res.send(`
+    <div style="background: #050505; color: #ffcc00; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; text-align: center;">
+      <h1 style="letter-spacing: 5px;">BENGALURU NEXUS COMMAND</h1>
+      <p style="color: #fff; margin: 20px 0;">The Command Core is running on Port 3001 (API), but the UI is unified on Port 9000.</p>
+      <a href="http://localhost:9000" style="background: #ffcc00; color: #000; padding: 15px 30px; border-radius: 5px; text-decoration: none; font-weight: 800; letter-spacing: 2px;">INITIALIZE HUB PORTAL (PORT 9000)</a>
+    </div>
+  `);
 });
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.redirect('http://localhost:9000' + req.path);
 });
 
 // Policy Advisor (P.I.S.E. GPT) Endpoint
@@ -247,5 +249,7 @@ app.post('/api/sentiment', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Digital Twin Integrated Command listening at http://localhost:${port}`);
+  console.log(`\n🚀 COMMAND CORE ONLINE`);
+  console.log(`🔗 API SERVER: http://localhost:${port}`);
+  console.log(`🖥️  UNIFIED UI: http://localhost:9000 (USE THIS LINK)\n`);
 });
