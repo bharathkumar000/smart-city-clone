@@ -9,40 +9,50 @@ Built for urban planners, emergency responders, and policy makers, the platform 
 
 ---
 
-## 🚀 CORE CAPABILITIES
+## 🛠️ Technical Architecture
 
-### 🏆 1. STRATEGIC MISSION CONTROL (Zoning & Urban Planning)
-*   **3D Building HUD**: Interactive extruded footprints with precise architectural metadata.
-*   **🏗️ Impact Simulation**: Revolutionary "What If" analysis. Simulate building removal or new infrastructure and instantly analyze the ripple effect on surrounding utilities and traffic.
-*   **📊 Triple Win Scorecard**: Real-time tracking of **Economic**, **Social**, and **Environmental** metrics.
-*   **🌿 Decision Confidence Meter**: AI-driven score that predicts the overall success and risk of administrative interventions.
+The platform is built on a high-performance geospatial stack designed for real-time 3D urban simulation.
 
-### 🎭 2. CITIZEN PULSE & SOCIAL HEURISTICS
-*   **🎭 Sentiment Heatmaps**: Visualization of real-time "Mood" across Bengaluru's wards using social telemetry.
-*   **Mood Visualization**: Dynamic heatmap where **Red** indicates high friction/complaints and **Green** indicates high satisfaction.
-*   **Global Policy Broadcast**: Deploy city-wide directives and monitor citizen response in real-time.
-
-### 🌊 3. CRISIS RESPONSE HUB
-*   **🌊 Flood Inundation Model**: High-precision 3D flood simulator (0-15m depth). Buildings are color-coded based on critical risk thresholds.
-*   **🚑 Disaster Routing**: Real-time EMS unit pathfinding and hydrant mapping for rapid emergency response.
-*   **⚡ Predictive Failure Analysis**: Uses Storm Intensity metrics to predict where power grids or structural points are most likely to fail.
-
-### 🧠 4. NEXUS AI ADVISOR (Policy Support)
-*   **🤖 SYNT-GOV AI**: An integrated Policy Advisor for fiscal and social impact auditing.
-*   **Conflict Resolver**: Automatically detects and proposes resolutions for inter-departmental conflicts (e.g., Road Dept vs Water Dept).
-*   **Scenario Battle Mode**: Compare different urban development options (e.g., Flyover vs Metro Link) in a high-fidelity side-by-side simulation.
+| Component | Technology | Role |
+| :--- | :--- | :--- |
+| **Core Rendering** | **MapLibre GL JS** | Open-source, WebGL-based engine for hardware-accelerated 3D extrusions and spatial repaints. |
+| **Base Layers** | **Google Maps Raster** | Direct XYZ raster tile integration for photorealistic satellite and street-level imagery. |
+| **Spatial Data** | **GeoJSON** | Industry-standard format for city infrastructure (buildings, utilities, hydrants). |
+| **Frontend** | **Next.js + Vite** | React-driven lifecycle management for instant canvas updates and state synchronization. |
+| **Backend** | **Node.js + Express** | High-concurrency API for logging spatial interactions and predictive failure analysis. |
+| **AI Engine** | **Ollama (Gemma 4)** | Local LLM integration for policy auditing and strategic directives. |
 
 ---
 
-## 🛠️ TECHNICAL ARCHITECTURE
+## 🚀 Advanced Command Features (v4.2)
 
-The platform is built on a **Premium Geospatial Stack**:
+### **1. 📊 STRATEGY**
+- **Impact Score**: Real-time normalization of economic, social, and environmental metrics.
+- **AI "Suggest Best Plan"**: Local LLM-powered (Gemma 4) tactical directives based on live city telemetry.
+- **Time Travel Horizon**: Visualize city evolution from 2020 (Historical) to 2030 (Predicted).
 
-*   **Frontend**: Next.js 16+ for professional-grade routing and SEO-optimized portal management.
-*   **Graphics Engine**: Deck.gl & MapLibre GL for 60fps 3D rendering of complex city-scale datasets.
-*   **Animation Engine**: Framer Motion for premium HUD transitions and rhythmic UI pulses.
-*   **Backend**: Node.js Express service powering Simulation, Sentiment, and Impact Analytics.
-*   **UI/UX**: "Midnight Tech" Aesthetic – high-contrast glassmorphism with cobalt-blue accents.
+### **2. 🤖 DIRECTIVES**
+- **Nexus AI Advisor**: Professional-grade urban policy auditing and fiscal reporting using `gemma4:e4b`.
+- **Strategic Broadcast**: City-wide deployment of governance directives and emergency alerts.
+
+### **3. 🏗️ BUILDER**
+- **Architectural Construction Hub**: High-fidelity asset placement (Buildings, Transport, Energy).
+- **Conflict Resolver**: Real-time spatial overlap detection between new developments and existing infrastructure.
+
+### **4. 🚨 CRISIS**
+- **3D Flood Simulator**: Interactive monsoon inundation modeling with building-level risk markers.
+- **EMS Deployment**: Real-time emergency routing and fire hydrant mapping.
+
+### **5. 🌐 SOCIAL**
+- **Citizen Sentiment Pulse**: Real-time social telemetry analysis to visualize public mood.
+- **Smart Risk Zones**: Autonomous AI-detection of high-stress utility and congestion points.
+
+---
+
+## ⚡ ADMINISTRATIVE "GOD MODE"
+*   **Global Grid Lock**: Instant Traffic Paralysis simulation for emergency drill testing.
+*   **Atmospheric Control**: Real-time Rainfall and Smog density toggles that affect agent behavior.
+*   **Chain Reaction Visualizer**: Pulsing ripple effects showing the spatial impact of new urban developments.
 
 ---
 
@@ -50,7 +60,7 @@ The platform is built on a **Premium Geospatial Stack**:
 
 ### Prerequisites
 *   Node.js (v18+)
-*   npm or yarn
+*   Ollama (with `gemma4:e4b` model downloaded)
 
 ### 1. Project Initialization
 ```bash
@@ -65,20 +75,6 @@ npm run dev
 ```
 *   **🏙️ Admin Nexus**: [http://localhost:9000/admin](http://localhost:9000/admin)
 *   **📡 Analysis Service**: [http://localhost:3001/api](http://localhost:3001/api)
-
----
-
-## 📂 PROJECT STRUCTURE
-```bash
-├── client/              # Next.js 3D Integrated Interface
-│   ├── app/            # App Router (Admin, User, Portal pages)
-│   ├── components/     # High-fidelity React components (HUD, Map)
-│   └── public/         # Static GIS Assets & Data
-├── server/              # Node.js Express Command Core
-│   └── index.js        # Simulation & Analytics Endpoints
-├── data/                # Master GeoJSON datasets for Bengaluru
-└── assets/              # Branding & UI Assets
-```
 
 ---
 

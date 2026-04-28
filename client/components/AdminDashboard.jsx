@@ -135,6 +135,12 @@ const AdminDashboard = () => {
   const [isSplitScreen, setIsSplitScreen] = useState(false);
   const [rippleActive, setRippleActive] = useState(false);
   const [activeSmartZones, setActiveSmartZones] = useState(true);
+  const [publicRequests, setPublicRequests] = useState([
+    { id: 1, type: 'Pothole', location: 'MG Road Junction', status: 'Pending', severity: 'High', lngLat: [77.5912, 12.9797] },
+    { id: 2, type: 'Water Leak', location: 'Indiranagar 8th Main', status: 'Resolved', severity: 'Low', lngLat: [77.6412, 12.9780] },
+    { id: 3, type: 'Streetlight Out', location: 'Cubbon Park Entrance', status: 'Pending', severity: 'Medium', lngLat: [77.5946, 12.9716] }
+  ]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const ASSET_TEMPLATES = {
     // --- BUILDINGS ---
@@ -322,6 +328,18 @@ const AdminDashboard = () => {
         
         // Rerouting logic if near demolish site
         let effectiveSpeed = speed;
+        
+        // INTERVENTION IMPACT: Flyovers & Metro Stations increase speed
+        placedAssets.forEach(asset => {
+          const dist = Math.sqrt(
+            Math.pow(pos[0] - asset.lngLat.lng, 2) + 
+            Math.pow(pos[1] - asset.lngLat.lat, 2)
+          );
+          if (dist < 0.001) {
+            if (asset.group === 'Transport') effectiveSpeed *= 1.4; // Speed boost near transit hubs
+          }
+        });
+
         if (demolishedId && selectedBuilding) {
           const dist = Math.sqrt(
             Math.pow(a.pos[0] - selectedBuilding.lngLat.lng, 2) + 
@@ -515,13 +533,36 @@ const AdminDashboard = () => {
     }
   };
 
-  // FEATURE 5: CONFLICT RESOLVER ENGINE
+  // FEATURE 5: CONFLICT RESOLVER ENGINE (Spatial Awareness)
   const handleConflictSim = () => {
-    setConflictReport({
-      status: "CRITICAL CONFLICT",
-      details: "Water Dept (Pipelining) vs Road Dept (Resurfacing) detected in Ward 42.",
-      resolution: "AUTO-RESCHEDULE: Move Pipelining to 04:00 AM."
-    });
+    // Detect overlaps in placed assets
+    let conflict = null;
+    for (let i = 0; i < placedAssets.length; i++) {
+      for (let j = i + 1; j < placedAssets.length; j++) {
+        const dist = Math.sqrt(
+          Math.pow(placedAssets[i].lngLat.lng - placedAssets[j].lngLat.lng, 2) + 
+          Math.pow(placedAssets[i].lngLat.lat - placedAssets[j].lngLat.lat, 2)
+        );
+        if (dist < 0.0005) {
+          conflict = {
+            status: "SPATIAL CONFLICT DETECTED",
+            details: `Structural overlap between ${placedAssets[i].type} and ${placedAssets[j].type}.`,
+            resolution: "RE-POSITION: Offset by 20m to comply with zoning laws."
+          };
+          break;
+        }
+      }
+    }
+
+    if (!conflict) {
+      setConflictReport({
+        status: "NO CONFLICTS DETECTED",
+        details: "Infrastructure synchronization optimal across all departments.",
+        resolution: "PROCEED with construction phase."
+      });
+    } else {
+      setConflictReport(conflict);
+    }
   };
 
   const handleSearch = async (e) => {
@@ -614,7 +655,8 @@ const AdminDashboard = () => {
     directives: { label: 'DIRECTIVES', icon: Bot },
     builder: { label: 'BUILDER', icon: Hammer },
     crisis: { label: 'CRISIS', icon: ShieldAlert },
-    social: { label: 'SOCIAL', icon: Globe }
+    social: { label: 'SOCIAL', icon: Globe },
+    reports: { label: 'REPORTS', icon: MessageSquare }
   };
 
   return (
@@ -838,6 +880,35 @@ const AdminDashboard = () => {
               </motion.div>
             )}
 
+            {activeCategory === 'reports' && (
+              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+                <div className="panel-section">
+                  <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                    <MessageSquare size={14} /> PUBLIC_REQUEST_INBOX
+                  </span>
+                  <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {publicRequests.map(req => (
+                      <div 
+                        key={req.id} 
+                        className="widget" 
+                        style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', cursor: 'pointer' }} 
+                        onClick={() => {
+                          map.current.flyTo({ center: req.lngLat, zoom: 17 });
+                          setSelectedRequest(req);
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-primary)' }}>{req.type.toUpperCase()}</span>
+                          <span style={{ fontSize: '0.5rem', padding: '2px 6px', borderRadius: '4px', background: req.status === 'Resolved' ? 'var(--success-glass)' : 'var(--danger-glass)', color: req.status === 'Resolved' ? 'var(--success)' : 'var(--danger)' }}>{req.status}</span>
+                        </div>
+                        <p style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>📍 {req.location}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
           </div>
         </div>
       </div>
@@ -973,6 +1044,67 @@ const AdminDashboard = () => {
             </p>
             <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(37,99,235,0.05)', borderRadius: '8px', fontSize: '0.7rem' }}>
               <strong style={{ color: 'var(--accent)' }}>ROOT CAUSE:</strong> Junction overload detected due to 35% increase in traffic inflow. Current infrastructure width is insufficient for this density.
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PUBLIC REQUEST DOSSIER (Center Popup) */}
+      <AnimatePresence>
+        {selectedRequest && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="preloader"
+            style={{ zIndex: 4000, background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(10px)' }}
+          >
+            <div className="widget" style={{ width: '450px', padding: '2rem', border: '1px solid var(--accent)', background: '#fff', boxShadow: '0 20px 60px rgba(37,99,235,0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--accent)', letterSpacing: '2px' }}>{selectedRequest.type.toUpperCase()}</h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <MapPin size={14} color="var(--text-secondary)" />
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{selectedRequest.location}</span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedRequest(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: 800 }}>SEVERITY_LVL</span>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '0.2rem', color: selectedRequest.severity === 'High' ? 'var(--danger)' : 'var(--warning)' }}>{selectedRequest.severity.toUpperCase()}</p>
+                </div>
+                <div style={{ padding: '1rem', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)', fontWeight: 800 }}>CURRENT_STATUS</span>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 900, marginTop: '0.2rem' }}>{selectedRequest.status.toUpperCase()}</p>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.7rem', lineHeight: '1.6', color: 'var(--text-primary)', marginBottom: '2rem', padding: '1rem', borderLeft: '3px solid var(--accent)', background: 'rgba(37,99,235,0.02)' }}>
+                <strong>ADMINISTRATIVE NOTE:</strong> Citizen reported issue via Nexus Mobile portal. Proximity analysis suggests localized utility stress. Immediate dispatch recommended if severity is HIGH.
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <button 
+                  className="action-btn" 
+                  onClick={() => {
+                    setPublicRequests(prev => prev.map(r => r.id === selectedRequest.id ? {...r, status: 'Resolved'} : r));
+                    setSelectedRequest(null);
+                  }}
+                  style={{ background: 'var(--accent)', color: '#fff', height: '45px' }}
+                >
+                  RESOLVE ISSUE
+                </button>
+                <button 
+                  className="action-btn danger" 
+                  onClick={() => setSelectedRequest(null)}
+                  style={{ height: '45px' }}
+                >
+                  DISMISS
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
