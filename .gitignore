@@ -1,16 +1,27 @@
+# --- BENGALURU NEXUS GITIGNORE ---
+
 # Dependency Directories
 node_modules/
 jspm_packages/
 .pnp
 .pnp.js
 
-# Next.js Build Artifacts
+# Next.js Build & Runtime
 .next/
 out/
 build/
 dist/
+.vercel
 
-# Logs
+# Environment Variables (CRITICAL: DO NOT COMMIT)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env.local
+
+# Logs & Diagnostic Reports
 logs
 *.log
 npm-debug.log*
@@ -18,8 +29,6 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
-
-# Diagnostic Reports
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Runtime Data
@@ -28,11 +37,6 @@ pids
 *.seed
 *.pid.lock
 
-# Directory for Instrumenting Libraries
-lib-cov
-coverage
-*.lcov
-
 # Caches
 .cache/
 .npm
@@ -40,20 +44,9 @@ coverage
 .stylelintcache
 .node_repl_history
 
-# Vercel
-.vercel
-
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
-
-# Environment Variables
-.env
-.env*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # OS Specific
 .DS_Store
@@ -71,7 +64,7 @@ Desktop.ini
 *.sublime-project
 *.sublime-workspace
 
-# Python (Scripts/ABM)
+# Python (ABM / Scripts)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -84,7 +77,7 @@ env/
 .gemini/
 .antigravity/
 
-# GIS Data (If using large local files)
+# GIS Data (Optional: ignore large local files)
 # data/bengaluru_buildings.json
 # data/bengaluru_infrastructure.json
 # data/bengaluru_utilities.json
