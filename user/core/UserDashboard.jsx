@@ -121,6 +121,7 @@ const UserDashboard = () => {
       
       <MapLayout 
         viewState={viewState} 
+        onViewStateChange={({ viewState }) => setViewState(viewState)}
         layers={layers} 
         currentStyle={currentStyle} 
         isXrayEnabled={isXrayEnabled}

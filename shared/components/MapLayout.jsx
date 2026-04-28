@@ -70,18 +70,16 @@ const MapLayout = ({
     wireframe: true,
     filled: true,
     getElevation: d => d.properties.height || 15,
-    getFillColor: [255, 255, 255, 240],
-    getLineColor: [37, 99, 235, 120],
+    getFillColor: [255, 255, 255],
+    getLineColor: [37, 99, 235, 150],
     lineWidthMinPixels: 1,
     pickable: true,
+    opacity: 1,
     material: {
-      ambient: 0.4,
-      diffuse: 0.8,
-      shininess: 32,
+      ambient: 1.0,
+      diffuse: 0.0,
+      shininess: 0,
       specularColor: [255, 255, 255]
-    },
-    updateTriggers: {
-      getFillColor: [isXrayEnabled]
     }
   });
 
