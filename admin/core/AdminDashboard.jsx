@@ -50,8 +50,8 @@ const AdminDashboard = () => {
   const [assetToPlace, setAssetToPlace] = useState(null);
   const [placedAssets, setPlacedAssets] = useState([]);
   const [publicRequests, setPublicRequests] = useState([
-    { id: 1, type: 'Pothole', location: 'MG Road', severity: 'High', status: 'Pending', lngLat: { lng: 77.60, lat: 12.97 } },
-    { id: 2, type: 'Traffic Light Failure', location: 'Indiranagar', severity: 'Medium', status: 'Pending', lngLat: { lng: 77.64, lat: 12.98 } }
+    { id: 1, type: 'Pothole', location: 'MG Road', severity: 'High', status: 'Pending', lngLat: { lng: 77.60, lat: 12.97 }, description: 'Large crater near the metro pillar causing severe traffic slowdowns and hazard for two-wheelers.', reporter: '@akash_blr', timestamp: '10 mins ago' },
+    { id: 2, type: 'Traffic Light Failure', location: 'Indiranagar', severity: 'Medium', status: 'Pending', lngLat: { lng: 77.64, lat: 12.98 }, description: 'All signals flashing yellow at the 100ft road junction. Major gridlock forming.', reporter: '@traffic_watcher', timestamp: '22 mins ago' }
   ]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [battleMode, setBattleMode] = useState(false);
@@ -101,15 +101,26 @@ const AdminDashboard = () => {
     return lines;
   };
 
+  const flyTo = (lngLat) => {
+    setViewState(prev => ({
+      ...prev,
+      longitude: lngLat.lng,
+      latitude: lngLat.lat,
+      zoom: 17,
+      pitch: 60,
+      transitionDuration: 2000
+    }));
+  };
+
   const layers = [
-    new LineLayer({
+    activeCategory === 'builder' ? new LineLayer({
       id: 'grid-layer',
       data: generateGrid(),
       getSourcePosition: d => d.start,
       getTargetPosition: d => d.end,
-      getColor: [37, 99, 235, 40],
-      getWidth: 1
-    }),
+      getColor: [255, 255, 255, 80], // White grid for Minecraft builder vibe
+      getWidth: 1.5
+    }) : null,
     sentimentEnabled && sentimentData ? new HeatmapLayer({
       id: 'sentiment-heatmap', 
       data: sentimentData.points, 
@@ -142,6 +153,20 @@ const AdminDashboard = () => {
       getRadius: 15,
       opacity: 0.8,
       pickable: false
+    }),
+    new ScatterplotLayer({
+      id: 'public-requests-layer',
+      data: publicRequests,
+      getPosition: d => [d.lngLat.lng, d.lngLat.lat],
+      getFillColor: d => selectedRequest && selectedRequest.id === d.id ? [59, 130, 246] : [239, 68, 68],
+      getRadius: d => selectedRequest && selectedRequest.id === d.id ? 30 : 15,
+      pickable: true,
+      onClick: ({ object }) => {
+        if (object) {
+          flyTo(object.lngLat);
+          setSelectedRequest(object);
+        }
+      }
     })
   ].filter(Boolean);
 
@@ -245,7 +270,7 @@ const AdminDashboard = () => {
         isSentimentLoading={isSentimentLoading}
         publicRequests={publicRequests}
         setSelectedRequest={setSelectedRequest}
-        mapRef={mapRef}
+        flyTo={flyTo}
         isSidebarCollapsed={isSidebarCollapsed}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
         isDemolishMode={isDemolishMode}

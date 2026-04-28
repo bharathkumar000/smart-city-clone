@@ -36,7 +36,7 @@ const AdminSidebar = ({
   isSentimentLoading,
   publicRequests,
   setSelectedRequest,
-  mapRef,
+  flyTo,
   isSidebarCollapsed,
   setIsSidebarCollapsed,
   isDemolishMode,
@@ -401,7 +401,7 @@ const AdminSidebar = ({
                       className="report-card widget" 
                       style={{ padding: '1rem', background: 'rgba(255,255,255,0.6)', border: '1px solid var(--glass-border)', cursor: 'pointer', transition: '0.2s' }} 
                       onClick={() => handleAction(() => {
-                        mapRef.current.flyTo({ center: req.lngLat, zoom: 17, pitch: 60 });
+                        flyTo(req.lngLat);
                         setSelectedRequest(req);
                       })}
                     >
