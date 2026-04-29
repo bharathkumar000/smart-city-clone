@@ -32,6 +32,7 @@ const MapLayout = ({
           'google-satellite': { type: 'raster', tiles: ['https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}'], tileSize: 256 },
           'google-roads': { type: 'raster', tiles: ['https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'], tileSize: 256 },
           'google-hybrid': { type: 'raster', tiles: ['https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'], tileSize: 256 },
+          'dark-blueprint': { type: 'raster', tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'], tileSize: 256 },
           'buildings': { type: 'geojson', data: '/data/bengaluru_buildings.json', generateId: true },
           'infrastructure': { type: 'geojson', data: '/data/bengaluru_infrastructure.json' },
           'utilities': { type: 'geojson', data: '/data/bengaluru_utilities.json' },
@@ -39,10 +40,11 @@ const MapLayout = ({
         },
         glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         layers: [
-          { id: 'background', type: 'background', paint: { 'background-color': '#0a0b10' } },
+          { id: 'background', type: 'background', paint: { 'background-color': '#050505' } },
           { id: 'hybrid-tiles', type: 'raster', source: 'google-hybrid', layout: { visibility: 'visible' } },
           { id: 'satellite-tiles', type: 'raster', source: 'google-satellite', layout: { visibility: 'none' } },
           { id: 'street-tiles', type: 'raster', source: 'google-roads', layout: { visibility: 'none' } },
+          { id: 'xray-dark-tiles', type: 'raster', source: 'dark-blueprint', layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.8 } },
           
           // MINECRAFT GRID — rendered on the ground (first in stack)
           {
@@ -54,9 +56,9 @@ const MapLayout = ({
                 'case',
                 ['boolean', ['feature-state', 'selected'], false],
                 'rgba(37, 99, 235, 0.4)',
-                'rgba(0, 0, 0, 0)'
+                'rgba(255, 255, 255, 0.02)'
               ],
-              'fill-outline-color': 'rgba(255, 255, 255, 0.2)'
+              'fill-outline-color': 'rgba(255, 255, 255, 0.05)'
             }
           },
           
@@ -65,7 +67,7 @@ const MapLayout = ({
             type: 'line',
             source: 'utilities',
             paint: {
-              'line-width': ['interpolate', ['linear'], ['zoom'], 12, 2, 18, 8],
+              'line-width': ['interpolate', ['linear'], ['zoom'], 12, 1, 15, 3, 18, 12],
               'line-color': ['match', ['get', 'type'], 
                 'WaterPipe', '#2563eb', 
                 'SewagePipe', '#facc15', 
@@ -73,7 +75,23 @@ const MapLayout = ({
                 'ElectricityLine', '#ffffff',
                 '#ffffff'],
               'line-opacity': 0,
-              'line-dasharray': [2, 1]
+              'line-blur': 0.5
+            }
+          },
+          {
+            id: 'utility-pipes-glow',
+            type: 'line',
+            source: 'utilities',
+            paint: {
+              'line-width': ['interpolate', ['linear'], ['zoom'], 12, 4, 18, 20],
+              'line-color': ['match', ['get', 'type'], 
+                'WaterPipe', '#2563eb', 
+                'SewagePipe', '#facc15', 
+                'GasLine', '#f97316', 
+                'ElectricityLine', '#ffffff',
+                '#ffffff'],
+              'line-opacity': 0,
+              'line-blur': 10
             }
           },
           // 3D BUILDINGS — rendered natively inside MapLibre so they NEVER drift
@@ -117,8 +135,32 @@ const MapLayout = ({
     map.current.on('load', () => {
       // Grid selection
       map.current.on('click', 'minecraft-grid', (e) => {
+        e.originalEvent._gridClicked = true; // Mark as grid click
         if (e.features.length > 0 && onGridClick) {
-          onGridClick(e.features[0].properties.id);
+          const props = e.features[0].properties;
+          onGridClick({
+            id: props.id,
+            lngLat: { lng: props.lng, lat: props.lat }
+          });
+        }
+      });
+
+      // Fallback click for map (if grid is not hit or too small)
+      map.current.on('click', (e) => {
+        // If we hit a building, don't trigger map click logic
+        if (e.originalEvent._buildingClicked) return;
+        
+        // If we didn't hit the grid, but we have onGridClick
+        if (!e.originalEvent._gridClicked && onGridClick) {
+          // Snap to a virtual grid of 0.0005 for consistency
+          const step = 0.0005;
+          const snappedLng = Math.round(e.lngLat.lng / step) * step;
+          const snappedLat = Math.round(e.lngLat.lat / step) * step;
+          
+          onGridClick({
+            id: `v-${Date.now()}`,
+            lngLat: { lng: snappedLng, lat: snappedLat }
+          });
         }
       });
 
@@ -144,6 +186,7 @@ const MapLayout = ({
 
       // Click on buildings — fire callback to parent
       map.current.on('click', '3d-buildings', (e) => {
+        e.originalEvent._buildingClicked = true; // Mark as building click
         if (e.features.length > 0) {
           const feature = e.features[0];
           if (onBuildingClick) {
@@ -228,17 +271,17 @@ const MapLayout = ({
     const isHybrid = currentStyle === 'hybrid';
     const isStreets = currentStyle === 'streets';
 
-    if (map.current.getLayer('satellite-tiles')) map.current.setLayoutProperty('satellite-tiles', 'visibility', isSat ? 'visible' : 'none');
-    if (map.current.getLayer('hybrid-tiles')) map.current.setLayoutProperty('hybrid-tiles', 'visibility', isHybrid ? 'visible' : 'none');
-    if (map.current.getLayer('street-tiles')) map.current.setLayoutProperty('street-tiles', 'visibility', isStreets ? 'visible' : 'none');
+    if (map.current.getLayer('satellite-tiles')) map.current.setLayoutProperty('satellite-tiles', 'visibility', (isSat && !isXrayEnabled) ? 'visible' : 'none');
+    if (map.current.getLayer('hybrid-tiles')) map.current.setLayoutProperty('hybrid-tiles', 'visibility', (isHybrid && !isXrayEnabled) ? 'visible' : 'none');
+    if (map.current.getLayer('street-tiles')) map.current.setLayoutProperty('street-tiles', 'visibility', (isStreets && !isXrayEnabled) ? 'visible' : 'none');
+    if (map.current.getLayer('xray-dark-tiles')) map.current.setLayoutProperty('xray-dark-tiles', 'visibility', isXrayEnabled ? 'visible' : 'none');
     
-    const targetLayer = isSat ? 'satellite-tiles' : (isHybrid ? 'hybrid-tiles' : 'street-tiles');
-    if (map.current.getLayer(targetLayer)) map.current.setPaintProperty(targetLayer, 'raster-opacity', isXrayEnabled ? 0.15 : 1);
-    if (map.current.getLayer('utility-pipes')) map.current.setPaintProperty('utility-pipes', 'line-opacity', isXrayEnabled ? 1 : 0);
+    if (map.current.getLayer('utility-pipes')) map.current.setPaintProperty('utility-pipes', 'line-opacity', isXrayEnabled ? 0.8 : 0);
+    if (map.current.getLayer('utility-pipes-glow')) map.current.setPaintProperty('utility-pipes-glow', 'line-opacity', isXrayEnabled ? 0.4 : 0);
     
-    // In X-ray mode, make buildings semi-transparent so utilities show through
+    // In X-ray mode, hide buildings entirely to show underground
     if (map.current.getLayer('3d-buildings')) {
-      map.current.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', isXrayEnabled ? 0.15 : 0.88);
+      map.current.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', isXrayEnabled ? 0 : 0.88);
     }
   }, [currentStyle, isXrayEnabled]);
 

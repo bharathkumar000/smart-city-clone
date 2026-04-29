@@ -47,6 +47,7 @@ const AdminDashboard = () => {
   const [advisorQuery, setAdvisorQuery] = useState('');
   const [policyForm, setPolicyForm] = useState({ title: '', location: '', budget: '', duration: '', impactUnderground: '', impactTraffic: '', outcome: '', lngLat: null });
   const [aiPolicyScore, setAiPolicyScore] = useState(null);
+  const [aiPolicyReport, setAiPolicyReport] = useState(null);
   const [isAnalyzingPolicy, setIsAnalyzingPolicy] = useState(false);
   const [activeNotification, setActiveNotification] = useState(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -105,27 +106,30 @@ const AdminDashboard = () => {
       // Remove from selected list
       setSelectedBuildings(prev => prev.filter(b => b.id !== building.id));
     } else {
-      // Action Type is likely an asset name like 'education'
-      const assetName = actionType.toUpperCase();
-      if (assetName.includes('EDUCATION')) {
-        prosperityChange = 120;
-        happinessChange = 15;
-        impactText = `New Education Hub established at ${building.name}. Literacy projections +4.2%. Future ROI surge detected.`;
-        scoreBonus = 500;
-      } else if (assetName.includes('MEDICAL')) {
-        prosperityChange = 80;
-        happinessChange = 25;
-        impactText = `Medical Facility integrated. Emergency response time reduced in this sector.`;
-        scoreBonus = 400;
-      } else if (assetName.includes('SMART')) {
-        prosperityChange = 200;
-        happinessChange = 5;
-        impactText = `Node upgraded to SMART_BUILDING. Energy efficiency +30%.`;
-        scoreBonus = 600;
+      // Action Type is likely an asset name like 'education-campus'
+      const template = ASSET_TEMPLATES[actionType];
+      const assetLabel = actionType.replace(/-/g, ' ').toUpperCase();
+      
+      if (template) {
+        prosperityChange = template.impacts.economic * 5;
+        happinessChange = template.impacts.social / 2;
+        impactText = `Repurposed ${building.name} into ${assetLabel}. ${template.impacts.economic > 0 ? 'Economic' : 'Social'} index adjusted.`;
+        scoreBonus = template.cost * 10;
+
+        // Place the 3D asset at building's location
+        setPlacedAssets(prev => [...prev, { 
+          id: Date.now() + Math.random(), 
+          type: actionType, 
+          lngLat: building.lngLat, 
+          ...template 
+        }]);
+
+        // Hide the original building
+        setDemolishedBuildingIds(prev => [...prev, building.id]);
       } else {
         prosperityChange = 40;
         happinessChange = 2;
-        impactText = `Infrastructure updated: ${assetName}. Standard urban growth metrics maintained.`;
+        impactText = `Infrastructure updated at ${building.name}. Standard urban growth metrics maintained.`;
         scoreBonus = 150;
       }
     }
@@ -153,6 +157,16 @@ const AdminDashboard = () => {
     
     selectedBuildings.forEach(building => {
       handleBuildingGameAction(building, 'DEMOLISH');
+    });
+    
+    setSelectedBuildings([]);
+  };
+
+  const handleApplyAssetToSelected = (assetName) => {
+    if (selectedBuildings.length === 0) return;
+    
+    selectedBuildings.forEach(building => {
+      handleBuildingGameAction(building, assetName);
     });
     
     setSelectedBuildings([]);
@@ -345,7 +359,55 @@ const AdminDashboard = () => {
     const score = Math.min(99, base + variance);
     
     setAiPolicyScore(score);
+    
+    // Generate Detailed Report
+    setAiPolicyReport({
+      score,
+      status: score >= 75 ? 'OPTIMAL' : (score >= 50 ? 'MID' : 'CRITICAL'),
+      breakdown: [
+        { label: 'Documentation Depth', value: policyPdfFile ? '+15%' : '0%', status: policyPdfFile ? 'pass' : 'fail' },
+        { label: 'Fiscal Transparency', value: policyForm.budget ? '+20%' : '0%', status: policyForm.budget ? 'pass' : 'fail' },
+        { label: 'Timeline Realism', value: policyForm.duration ? '+15%' : '0%', status: policyForm.duration ? 'pass' : 'fail' },
+        { label: 'Geospatial Precision', value: policyForm.lngLat ? '+25%' : '0%', status: policyForm.lngLat ? 'pass' : 'fail' }
+      ],
+      reasons: [
+        !policyForm.lngLat && "Missing coordinate anchoring reduces infrastructure accuracy.",
+        !policyForm.budget && "Lack of budget transparency increases implementation risk.",
+        score < 75 && "Impact on local traffic exceeds standard safety thresholds (estimated 32% increase)."
+      ].filter(Boolean),
+      suggestions: [
+        "Shift construction to night shifts (11 PM - 5 AM) to reduce daytime traffic impact by 40%.",
+        "Allocate 5% of budget to 'Citizen Compensation Fund' for local business disruption.",
+        "Add secondary utility inspection to prevent water main accidents in the target zone."
+      ]
+    });
+    
     setIsAnalyzingPolicy(false);
+  };
+  
+  const handleDownloadReport = () => {
+    if (!aiPolicyReport) return;
+    const reportText = `
+BENGALURU NEXUS - POLICY VIABILITY REPORT
+------------------------------------------
+TITLE: ${policyForm.title || 'Untitled Policy'}
+SCORE: ${aiPolicyReport.score}% (${aiPolicyReport.status})
+
+BREAKDOWN:
+${aiPolicyReport.breakdown.map(b => `- ${b.label}: ${b.value}`).join('\n')}
+
+REASONS FOR RATING:
+${aiPolicyReport.reasons.map(r => `- ${r}`).join('\n')}
+
+AI SUGGESTIONS FOR IMPROVEMENT:
+${aiPolicyReport.suggestions.map(s => `- ${s}`).join('\n')}
+    `;
+    const blob = new Blob([reportText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Policy_Report_${Date.now()}.txt`;
+    a.click();
   };
 
   const handleBroadcastPolicy = async () => {
@@ -488,6 +550,32 @@ const AdminDashboard = () => {
             handleBuildingGameAction(building, 'DEMOLISH');
             return;
           }
+
+          if (assetToPlace && ASSET_TEMPLATES[assetToPlace]?.group === 'Transport') {
+            const lngLat = building.lngLat;
+            if (transportStep === 0) {
+              setPlacementStart(lngLat);
+              setTransportStep(1);
+              alert('START POINT SET. Now select the END POINT.');
+            } else {
+              const newAsset = { 
+                id: Date.now(), 
+                type: assetToPlace, 
+                startLngLat: placementStart, 
+                endLngLat: lngLat, 
+                height: customHeight,
+                color: ASSET_TEMPLATES[assetToPlace].color,
+                group: 'Transport' 
+              };
+              setPlacedAssets(prev => [...prev, newAsset]);
+              setTransportStep(0);
+              setPlacementStart(null);
+              setAssetToPlace(null);
+              alert('TRANSPORT ASSET DEPLOYED.');
+            }
+            return;
+          }
+
           if (assetToPlace) {
             handleBuildingGameAction(building, assetToPlace);
             return;
@@ -577,6 +665,8 @@ const AdminDashboard = () => {
         setSelectedRequest={setSelectedRequest}
         flyTo={flyTo}
         aiPolicyScore={aiPolicyScore}
+        aiPolicyReport={aiPolicyReport}
+        handleDownloadReport={handleDownloadReport}
         isAnalyzingPolicy={isAnalyzingPolicy}
         handleAnalyzePolicy={handleAnalyzePolicy}
         isSidebarCollapsed={isSidebarCollapsed}
@@ -585,6 +675,7 @@ const AdminDashboard = () => {
         setIsDemolishMode={setIsDemolishMode}
         selectedBuildings={selectedBuildings}
         handleDemolishSelected={handleDemolishSelected}
+        handleApplyAssetToSelected={handleApplyAssetToSelected}
         sentimentData={sentimentData}
         policyLocationPicking={policyLocationPicking}
         setPolicyLocationPicking={setPolicyLocationPicking}
@@ -595,6 +686,10 @@ const AdminDashboard = () => {
         handleLocationSearch={handleLocationSearch}
         handlePickLocation={handlePickLocation}
         mapRef={mapRef}
+        customHeight={customHeight}
+        setCustomHeight={setCustomHeight}
+        transportStep={transportStep}
+        handleApplyAssetToSelected={handleApplyAssetToSelected}
       />
 
       <AdminDock 

@@ -31,7 +31,7 @@ const AdminSidebar = ({
   setShowHydrants,
   isEmergencyActive,
   setIsEmergencyActive,
-  publicRequests,
+  publicRequests = [],
   setSelectedRequest,
   flyTo,
   isSidebarCollapsed,
@@ -40,6 +40,7 @@ const AdminSidebar = ({
   setIsDemolishMode,
   selectedBuildings = [],
   handleDemolishSelected,
+  handleApplyAssetToSelected,
   aiPolicyScore,
   isAnalyzingPolicy,
   handleAnalyzePolicy,
@@ -51,7 +52,12 @@ const AdminSidebar = ({
   locationSearchResults,
   handleLocationSearch,
   handlePickLocation,
-  mapRef
+  mapRef,
+  customHeight,
+  setCustomHeight,
+  transportStep,
+  aiPolicyReport,
+  handleDownloadReport
 }) => {
   const [isMaximized, setIsMaximized] = React.useState(false);
 
@@ -285,6 +291,33 @@ const AdminSidebar = ({
                     <Trash2 size={15} color={(selectedBuildings.length > 0 || isDemolishMode) ? 'var(--danger)' : 'var(--text-secondary)'} />
                   </button>
                 </div>
+
+                {assetToPlace && ASSET_TEMPLATES[assetToPlace]?.group === 'Transport' && (
+                  <div style={{ marginTop: '0.5rem', marginBottom: '1.5rem', padding: '1rem', background: 'rgba(37, 99, 235, 0.05)', borderRadius: '12px', border: '1px solid var(--accent-glass)' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Navigation size={12} /> TRANSPORT_PLACEMENT_CONFIG
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>ELEVATION / HEIGHT (m)</label>
+                      <input 
+                        type="range" min="0" max="100" step="1" 
+                        value={customHeight} 
+                        onChange={(e) => setCustomHeight(parseInt(e.target.value))} 
+                        style={{ width: '100%', accentColor: 'var(--accent)' }} 
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.2rem' }}>
+                        <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>0m</span>
+                        <span style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--accent)' }}>{customHeight}m</span>
+                        <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>100m</span>
+                      </div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.5)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                       <p style={{ fontSize: '0.55rem', color: 'var(--text-primary)', fontWeight: 800, textAlign: 'center' }}>
+                         {transportStep === 0 ? '👉 SELECT START POINT' : '🎯 SELECT END POINT'}
+                       </p>
+                    </div>
+                  </div>
+                )}
                 
                 {['Buildings', 'Transport', 'Energy'].map(groupName => {
                   const assets = Object.entries(ASSET_TEMPLATES).filter(([_, a]) => a.group === groupName);
@@ -317,15 +350,21 @@ const AdminSidebar = ({
                               key={name} 
                               draggable 
                               onDragStart={(e) => onDragStart(e, name)} 
-                              onClick={() => handleAction(() => setAssetToPlace(name))} 
-                              title={name.toUpperCase()}
+                              onClick={() => {
+                                if (selectedBuildings.length > 0) {
+                                  handleApplyAssetToSelected(name);
+                                } else {
+                                  handleAction(() => setAssetToPlace(name));
+                                }
+                              }} 
+                              title={selectedBuildings.length > 0 ? `Apply to ${selectedBuildings.length} Selected` : name.toUpperCase()}
                               style={{ 
                                 aspectRatio: '1/1',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'grab', 
+                                cursor: selectedBuildings.length > 0 ? 'cell' : 'grab', 
                                 background: isActive ? 'rgba(37, 99, 235, 0.1)' : '#ffffff',
                                 border: isActive ? '1.5px solid var(--accent)' : '1px solid #e2e8f0',
                                 borderRadius: '10px',
@@ -520,32 +559,93 @@ const AdminSidebar = ({
                     </button>
                   </div>
 
-                  {/* AI SCORE RESULT */}
+                  {/* AI SCORE RESULT & DETAILED REPORT */}
                   {aiPolicyScore !== null && (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: '1.25rem', background: 'rgba(10,11,16,0.92)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-                      <span style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.5)', fontWeight: 900, letterSpacing: '2px' }}>AI_VIABILITY_SCORE</span>
-                      <div style={{ 
-                        fontSize: '2.5rem', fontWeight: 900, 
-                        color: aiPolicyScore >= 75 ? '#10b981' : aiPolicyScore >= 50 ? '#f59e0b' : '#ef4444', 
-                        margin: '0.5rem 0',
-                        textShadow: aiPolicyScore >= 75 ? '0 0 20px rgba(16,185,129,0.4)' : aiPolicyScore >= 50 ? '0 0 20px rgba(245,158,11,0.4)' : '0 0 20px rgba(239,68,68,0.4)'
-                      }}>
-                        {aiPolicyScore}%
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ padding: '1.25rem', background: 'rgba(10,11,16,0.95)', border: '1px solid var(--accent)', borderRadius: '12px', color: '#fff', textAlign: 'left' }}>
+                      <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+                        <span style={{ fontSize: '0.55rem', color: 'var(--accent)', letterSpacing: '2px', fontWeight: 900 }}>AI_VIABILITY_SCORE</span>
+                        <div style={{ 
+                          fontSize: '2.5rem', fontWeight: 900, 
+                          color: aiPolicyScore >= 75 ? '#10b981' : aiPolicyScore >= 50 ? '#f59e0b' : '#ef4444', 
+                          margin: '0.25rem 0',
+                          textShadow: aiPolicyScore >= 75 ? '0 0 20px rgba(16,185,129,0.3)' : aiPolicyScore >= 50 ? '0 0 20px rgba(245,158,11,0.3)' : '0 0 20px rgba(239,68,68,0.3)'
+                        }}>
+                          {aiPolicyScore}%
+                        </div>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: aiPolicyScore >= 75 ? '#10b981' : aiPolicyScore >= 50 ? '#f59e0b' : '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                          {aiPolicyScore >= 75 ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />} 
+                          {aiPolicyReport?.status} — {aiPolicyScore >= 75 ? 'READY TO IMPLEMENT' : 'NEEDS REVISION'}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', marginBottom: '1rem' }}>
-                        {aiPolicyScore >= 75 ? <CheckCircle2 size={16} color="#10b981" /> : aiPolicyScore >= 50 ? <AlertTriangle size={16} color="#f59e0b" /> : <XCircle size={16} color="#ef4444" />}
-                        <span style={{ fontSize: '0.7rem', fontWeight: 900, letterSpacing: '1.5px', color: aiPolicyScore >= 75 ? '#10b981' : aiPolicyScore >= 50 ? '#f59e0b' : '#ef4444' }}>
-                          {aiPolicyScore >= 75 ? '🟢 SAFE — READY TO IMPLEMENT' : aiPolicyScore >= 50 ? '🟡 MID — NEEDS REVISION' : '🔴 DANGER — DO NOT IMPLEMENT'}
-                        </span>
+
+                      {/* SCORE BREAKDOWN */}
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.85rem', borderRadius: '10px', marginBottom: '1rem', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: '0.55rem', color: 'var(--accent)', display: 'block', marginBottom: '0.6rem', fontWeight: 800 }}>VITALITY_GAIN_ANALYSIS</span>
+                        {aiPolicyReport?.breakdown?.map((b, i) => (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.55rem', marginBottom: '0.4rem', borderBottom: '1px solid rgba(255,255,255,0.02)', paddingBottom: '0.2rem' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.6)' }}>{b.label}</span>
+                            <span style={{ color: b.status === 'pass' ? '#10b981' : '#ef4444', fontWeight: 900 }}>{b.value}</span>
+                          </div>
+                        ))}
                       </div>
+
+                      {/* REASONS */}
+                      <div style={{ marginBottom: '1.25rem' }}>
+                        <span style={{ fontSize: '0.55rem', color: 'var(--accent)', display: 'block', marginBottom: '0.5rem', fontWeight: 800 }}>DETAILED_REASONING</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {aiPolicyReport?.reasons?.map((r, i) => (
+                            <div key={i} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.55rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.4, background: 'rgba(255,255,255,0.02)', padding: '0.4rem', borderRadius: '6px' }}>
+                              <span style={{ color: 'var(--accent)' }}>•</span>
+                              <span>{r}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* AI SUGGESTIONS SECTION */}
+                      <div style={{ background: 'rgba(37,99,235,0.08)', padding: '1rem', borderRadius: '12px', borderLeft: '3px solid var(--accent)', marginBottom: '1.25rem', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent)', marginBottom: '0.75rem' }}>
+                          <Bot size={16} /> NEXUS AI SUGGESTIONS (CITIZEN_FIRST)
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                          {aiPolicyReport?.suggestions?.map((s, i) => (
+                            <div key={i} style={{ fontSize: '0.6rem', color: '#fff', lineHeight: 1.4, display: 'flex', gap: '0.5rem' }}>
+                              <span style={{ color: 'var(--accent)', fontWeight: 900 }}>»</span>
+                              <span>{s}</span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <button 
+                          onClick={handleDownloadReport} 
+                          style={{ 
+                            width: '100%', marginTop: '1rem', 
+                            background: 'rgba(255,255,255,0.05)', color: 'var(--accent)', 
+                            border: '1px solid var(--accent-glass)', borderRadius: '8px', 
+                            padding: '0.6rem', fontSize: '0.6rem', fontWeight: 900, 
+                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(37,99,235,0.1)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        >
+                          <FileText size={14} /> DOWNLOAD FULL STRATEGY REPORT (.PDF)
+                        </button>
+                      </div>
+
                       {aiPolicyScore >= 75 ? (
-                        <button className="action-btn" onClick={() => handleAction(handleBroadcastPolicy)} disabled={isBroadcasting} style={{ width: '100%', background: '#10b981', color: '#fff', fontWeight: 900, letterSpacing: '1px', fontSize: '0.7rem' }}>
-                          {isBroadcasting ? <><Loader2 className="spin" size={14} /> DEPLOYING...</> : '🚀 IMPLEMENT & NOTIFY CITIZENS'}
+                        <button className="action-btn" onClick={() => handleAction(handleBroadcastPolicy)} disabled={isBroadcasting} style={{ width: '100%', background: '#10b981', color: '#fff', fontWeight: 900, letterSpacing: '1px', fontSize: '0.75rem', height: '45px' }}>
+                          {isBroadcasting ? <><Loader2 className="spin" size={16} /> DEPLOYING...</> : '🚀 DEPLOY GLOBAL DIRECTIVE'}
                         </button>
                       ) : (
-                        <button disabled style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', fontWeight: 800, fontSize: '0.6rem', cursor: 'not-allowed', letterSpacing: '1px' }}>
-                          🔒 IMPLEMENT LOCKED (REQUIRES 75%+)
-                        </button>
+                        <div style={{ 
+                          width: '100%', padding: '0.85rem', borderRadius: '10px', 
+                          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: 0.6
+                        }}>
+                          <ShieldAlert size={14} color="#ef4444" />
+                          <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#ef4444', letterSpacing: '0.5px' }}>IMPLEMENTATION_LOCKED (MIN. 75%)</span>
+                        </div>
                       )}
                     </motion.div>
                   )}
