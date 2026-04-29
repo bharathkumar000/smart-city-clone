@@ -24,8 +24,7 @@ export const ASSET_TEMPLATES = {
 };
 
 export const CATEGORIES = {
-  strategy: { label: 'STRATEGY', icon: Activity },
-  directives: { label: 'DIRECTIVES', icon: Bot },
+  strategy: { label: 'STRATEGY & DIRECTIVES', icon: Activity },
   builder: { label: 'BUILDER', icon: Hammer },
   policy: { label: 'POLICY', icon: FileText },
   social: { label: 'SOCIAL & REPORTS', icon: Globe }

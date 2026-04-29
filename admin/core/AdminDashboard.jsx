@@ -45,11 +45,15 @@ const AdminDashboard = () => {
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [advisorLog, setAdvisorLog] = useState([{ role: 'ai', content: 'SYSTEM_READY. Awaiting directives.' }]);
   const [advisorQuery, setAdvisorQuery] = useState('');
-  const [policyForm, setPolicyForm] = useState({ title: '', location: '', budget: '', duration: '', impactUnderground: '', impactTraffic: '', outcome: '' });
+  const [policyForm, setPolicyForm] = useState({ title: '', location: '', budget: '', duration: '', impactUnderground: '', impactTraffic: '', outcome: '', lngLat: null });
   const [aiPolicyScore, setAiPolicyScore] = useState(null);
   const [isAnalyzingPolicy, setIsAnalyzingPolicy] = useState(false);
   const [activeNotification, setActiveNotification] = useState(null);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [policyLocationPicking, setPolicyLocationPicking] = useState(false);
+  const [policyPdfFile, setPolicyPdfFile] = useState(null);
+  const [locationSearchResults, setLocationSearchResults] = useState([]);
+  const locationSearchTimeout = useRef(null);
   const [assetToPlace, setAssetToPlace] = useState(null);
   const [placedAssets, setPlacedAssets] = useState([]);
   const [publicRequests, setPublicRequests] = useState([
@@ -195,22 +199,71 @@ const AdminDashboard = () => {
     setTimeout(() => setAdvisorLog(p => [...p, { role: 'ai', content: "Strategic assessment complete. Location: "+policyForm.location+". Recommendation: Deploy transit hub." }]), 1000);
   };
 
-  const handleAnalyzePolicy = () => {
+  const handleAnalyzePolicy = async () => {
     setIsAnalyzingPolicy(true);
     setAiPolicyScore(null);
-    // Simulating Ollama Gemma 4 policy audit based on input completeness
+    
+    // 1. If a document is attached, fetch data from it first using Ollama document parser
+    if (policyPdfFile) {
+      try {
+        const formData = new FormData();
+        formData.append('file', policyPdfFile);
+        const res = await axios.post('http://localhost:3001/api/parse-policy-document', formData);
+        if (res.data) {
+          setPolicyForm(prev => ({
+            ...prev,
+            title: res.data.title !== 'N/A' ? res.data.title : prev.title,
+            budget: res.data.budget !== 'N/A' ? res.data.budget : prev.budget,
+            duration: res.data.duration !== 'N/A' ? res.data.duration : prev.duration,
+            outcome: res.data.outcome !== 'N/A' ? res.data.outcome : prev.outcome,
+            location: res.data.location !== 'N/A' ? res.data.location : prev.location
+          }));
+        }
+      } catch (err) {
+        console.warn('Document parsing failed, falling back to manual scoring.', err.message);
+      }
+    }
+
+    // 2. Score based on form completeness - more fields filled = higher score
     setTimeout(() => {
-      const isComplete = policyForm.title && policyForm.budget && policyForm.impactTraffic;
-      const score = isComplete ? Math.floor(Math.random() * 15) + 80 : Math.floor(Math.random() * 20) + 50;
+      let filled = 0;
+      if (policyForm.title) filled++;
+      if (policyForm.location) filled++;
+      if (policyForm.budget) filled++;
+      if (policyForm.duration) filled++;
+      if (policyForm.impactTraffic) filled++;
+      if (policyForm.impactUnderground) filled++;
+      if (policyForm.outcome) filled++;
+      if (policyForm.lngLat) filled++;
+      if (policyPdfFile) filled++;
+      
+      const completeness = filled / 9;
+      const base = Math.floor(completeness * 50) + 40; // 40-90 base
+      const variance = Math.floor(Math.random() * 10);
+      const score = Math.min(99, base + variance);
+      
       setAiPolicyScore(score);
       setIsAnalyzingPolicy(false);
     }, 2500);
   };
 
-  const handleBroadcastPolicy = () => {
+  const handleBroadcastPolicy = async () => {
     setIsBroadcasting(true);
-    setTimeout(() => { 
-      setIsBroadcasting(false); 
+    try {
+      // POST notification to server so users can see it
+      await axios.post('http://localhost:3001/api/notifications', {
+        policy: policyForm.title || 'URBAN POLICY DEPLOYMENT',
+        price: policyForm.budget || 'N/A',
+        location: policyForm.location || 'Bengaluru Central',
+        purpose: policyForm.outcome || 'Strategic urban development initiative.',
+        prediction: `AI Viability Score: ${aiPolicyScore}% — SAFE`,
+        duration: policyForm.duration || 'TBD'
+      });
+    } catch (err) {
+      console.warn('Notification POST failed (server may be offline):', err.message);
+    }
+    setTimeout(() => {
+      setIsBroadcasting(false);
       setActiveNotification({
         id: Date.now(),
         type: 'GLOBAL_DIRECTIVE',
@@ -219,10 +272,86 @@ const AdminDashboard = () => {
         score: aiPolicyScore,
         timestamp: new Date().toLocaleTimeString()
       });
-      setPolicyForm({ title: '', location: '', budget: '', duration: '', impactUnderground: '', impactTraffic: '', outcome: '' });
+      setPolicyForm({ title: '', location: '', budget: '', duration: '', impactUnderground: '', impactTraffic: '', outcome: '', lngLat: null });
       setAiPolicyScore(null);
+      setPolicyPdfFile(null);
+      setPolicyLocationPicking(false);
+      setLocationSearchResults([]);
+      alert('✅ POLICY DEPLOYED! Notification sent to all citizens.');
     }, 1500);
   };
+
+  // Location helpers for Policy Hub
+  const handleGetLiveLocation = () => {
+    if (!navigator.geolocation) return alert('Geolocation not supported by your browser.');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setPolicyForm(prev => ({ ...prev, lngLat: { lat: latitude, lng: longitude } }));
+        // Reverse geocode to get a readable name
+        try {
+          const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          if (res.data?.display_name) {
+            setPolicyForm(prev => ({ ...prev, location: res.data.display_name.split(',').slice(0,3).join(','), lngLat: { lat: latitude, lng: longitude } }));
+          }
+        } catch (e) {
+          setPolicyForm(prev => ({ ...prev, location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` }));
+        }
+        // Fly map to the location
+        if (mapRef.current) mapRef.current.flyTo({ center: [longitude, latitude], zoom: 16, pitch: 55, duration: 2000 });
+      },
+      (err) => alert('Location access denied: ' + err.message),
+      { enableHighAccuracy: true }
+    );
+  };
+
+  const handleLocationSearch = (query) => {
+    if (locationSearchTimeout.current) clearTimeout(locationSearchTimeout.current);
+    locationSearchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await axios.get(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)},Bengaluru,India&format=json&limit=5`);
+        setLocationSearchResults(res.data || []);
+      } catch (err) {
+        console.error('Location search failed:', err);
+        setLocationSearchResults([]);
+      }
+    }, 400);
+  };
+
+  const handlePickLocation = (result) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    setPolicyForm(prev => ({ ...prev, location: result.display_name.split(',').slice(0,3).join(','), lngLat: { lat, lng } }));
+    setLocationSearchResults([]);
+    if (mapRef.current) mapRef.current.flyTo({ center: [lng, lat], zoom: 16, pitch: 55, duration: 2000 });
+  };
+
+  // Map click handler for policy location pinning
+  useEffect(() => {
+    if (!mapRef.current || !policyLocationPicking) return;
+    const handleMapClick = async (e) => {
+      const { lng, lat } = e.lngLat;
+      setPolicyForm(prev => ({ ...prev, lngLat: { lat, lng } }));
+      setPolicyLocationPicking(false);
+      // Reverse geocode
+      try {
+        const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        if (res.data?.display_name) {
+          setPolicyForm(prev => ({ ...prev, location: res.data.display_name.split(',').slice(0,3).join(','), lngLat: { lat, lng } }));
+        }
+      } catch (e) {
+        setPolicyForm(prev => ({ ...prev, location: `${lat.toFixed(4)}, ${lng.toFixed(4)}` }));
+      }
+    };
+    mapRef.current.on('click', handleMapClick);
+    mapRef.current.getCanvas().style.cursor = 'crosshair';
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.off('click', handleMapClick);
+        mapRef.current.getCanvas().style.cursor = '';
+      }
+    };
+  }, [policyLocationPicking]);
 
   const onDragStart = (e, type) => e.dataTransfer.setData('assetType', type);
   const onDrop = (e) => {
@@ -306,6 +435,15 @@ const AdminDashboard = () => {
         isDemolishMode={isDemolishMode}
         setIsDemolishMode={setIsDemolishMode}
         sentimentData={sentimentData}
+        policyLocationPicking={policyLocationPicking}
+        setPolicyLocationPicking={setPolicyLocationPicking}
+        policyPdfFile={policyPdfFile}
+        setPolicyPdfFile={setPolicyPdfFile}
+        handleGetLiveLocation={handleGetLiveLocation}
+        locationSearchResults={locationSearchResults}
+        handleLocationSearch={handleLocationSearch}
+        handlePickLocation={handlePickLocation}
+        mapRef={mapRef}
       />
 
       <AdminDock 
