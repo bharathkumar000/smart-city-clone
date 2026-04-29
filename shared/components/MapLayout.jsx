@@ -70,12 +70,11 @@ const MapLayout = ({
     wireframe: true,
     filled: true,
     getElevation: d => d.properties.height || 15,
-    getFillColor: [240, 243, 248, 255], // Clean white buildings
-    getLineColor: [60, 65, 75, 180], // Dark grey edge outlines to separate each building
+    getFillColor: [240, 243, 248, 255],
+    getLineColor: [60, 65, 75, 180],
     lineWidthMinPixels: 1,
-    pickable: true,
-    autoHighlight: true,
-    highlightColor: [37, 99, 235, 180], // Blue glow on hover
+    pickable: false,
+    autoHighlight: false,
     opacity: 0.92,
     material: {
       ambient: 0.35,
