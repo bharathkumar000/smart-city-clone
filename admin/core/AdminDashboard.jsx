@@ -16,6 +16,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import AdminDock from '../components/AdminDock';
 import PublicRequestDossier from '../components/PublicRequestDossier';
 import ScenarioBattle from '../components/ScenarioBattle';
+import UrbanHUD from '../components/UrbanHUD';
 import { ASSET_TEMPLATES } from '../utils/constants';
 
 const AdminDashboard = () => {
@@ -72,6 +73,72 @@ const AdminDashboard = () => {
   const [viewState, setViewState] = useState({
     longitude: 77.5912, latitude: 12.9797, zoom: 14, pitch: 55, bearing: 0
   });
+
+  // GAME ENGINE STATE
+  const [cityStats, setCityStats] = useState({ prosperity: 1250, happiness: 72, population: 45000, level: 12 });
+  const [lastActionImpact, setLastActionImpact] = useState(null);
+  const impactTimeout = useRef(null);
+
+  const triggerImpactReport = (actionData) => {
+    if (impactTimeout.current) clearTimeout(impactTimeout.current);
+    setLastActionImpact(actionData);
+    impactTimeout.current = setTimeout(() => setLastActionImpact(null), 5000);
+  };
+
+  const handleBuildingGameAction = (building, actionType) => {
+    let prosperityChange = 0;
+    let happinessChange = 0;
+    let impactText = "";
+    let scoreBonus = 0;
+
+    if (actionType === 'DEMOLISH') {
+      prosperityChange = -50;
+      happinessChange = -10;
+      impactText = `Demolished ${building.name}. Citizen displacement detected. Utility grid temporarily unstable.`;
+      scoreBonus = -100;
+    } else {
+      // Action Type is likely an asset name like 'education'
+      const assetName = actionType.toUpperCase();
+      if (assetName.includes('EDUCATION')) {
+        prosperityChange = 120;
+        happinessChange = 15;
+        impactText = `New Education Hub established at ${building.name}. Literacy projections +4.2%. Future ROI surge detected.`;
+        scoreBonus = 500;
+      } else if (assetName.includes('MEDICAL')) {
+        prosperityChange = 80;
+        happinessChange = 25;
+        impactText = `Medical Facility integrated. Emergency response time reduced in this sector.`;
+        scoreBonus = 400;
+      } else if (assetName.includes('SMART')) {
+        prosperityChange = 200;
+        happinessChange = 5;
+        impactText = `Node upgraded to SMART_BUILDING. Energy efficiency +30%.`;
+        scoreBonus = 600;
+      } else {
+        prosperityChange = 40;
+        happinessChange = 2;
+        impactText = `Infrastructure updated: ${assetName}. Standard urban growth metrics maintained.`;
+        scoreBonus = 150;
+      }
+    }
+
+    setCityStats(prev => ({
+      ...prev,
+      prosperity: prev.prosperity + prosperityChange,
+      happiness: Math.min(100, Math.max(0, prev.happiness + happinessChange)),
+      population: prev.population + (prosperityChange > 0 ? 120 : -50)
+    }));
+
+    triggerImpactReport({
+      type: actionType,
+      building: building.name,
+      score: scoreBonus,
+      prosperity: prosperityChange,
+      happiness: happinessChange,
+      text: impactText,
+      timestamp: new Date().toLocaleTimeString()
+    });
+  };
 
   useEffect(() => {
     if (activeCategory) setIsSidebarCollapsed(false);
@@ -400,6 +467,15 @@ const AdminDashboard = () => {
         onMapLoad={(m) => { mapRef.current = m; setMapLoaded(true); }}
         onWebGLInitialized={onWebGLInitialized}
         onBuildingClick={(building) => {
+          if (isDemolishMode) {
+            handleBuildingGameAction(building, 'DEMOLISH');
+            return;
+          }
+          if (assetToPlace) {
+            handleBuildingGameAction(building, assetToPlace);
+            return;
+          }
+
           if (building.isShiftPressed) {
             setSelectedBuildings(prev => {
               if (prev.find(b => b.id === building.id)) return prev.filter(b => b.id !== building.id);
@@ -475,19 +551,20 @@ const AdminDashboard = () => {
       />
 
       <AdminDock 
-        activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
-        isXrayEnabled={isXrayEnabled}
-        setIsXrayEnabled={setIsXrayEnabled}
+        activeCategory={activeCategory} 
+        setActiveCategory={setActiveCategory} 
         currentStyle={currentStyle}
         setCurrentStyle={setCurrentStyle}
-        handleLogout={handleLogout}
+        isXrayEnabled={isXrayEnabled}
+        setIsXrayEnabled={setIsXrayEnabled}
         isSplitScreen={isSplitScreen}
         setIsSplitScreen={setIsSplitScreen}
         activeSmartZones={activeSmartZones}
         setActiveSmartZones={setActiveSmartZones}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
       />
+
+      <UrbanHUD cityStats={cityStats} lastActionImpact={lastActionImpact} />
 
       <PublicRequestDossier 
         selectedRequest={selectedRequest} 
