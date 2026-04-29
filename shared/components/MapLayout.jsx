@@ -13,6 +13,7 @@ const MapLayout = ({
   onViewStateChange,
   onBuildingClick,
   selectedBuildingIds = [],
+  demolishedBuildingIds = [],
   gridData = null,
   onGridClick = null,
   selectedGridCellId = null,
@@ -99,7 +100,8 @@ const MapLayout = ({
               'fill-extrusion-height': ['coalesce', ['get', 'height'], 6],
               'fill-extrusion-base': 0,
               'fill-extrusion-opacity': 0.88
-            }
+            },
+            filter: ['!', ['in', ['id'], ['literal', demolishedBuildingIds]]]
           }
         ]
       },
@@ -209,6 +211,14 @@ const MapLayout = ({
     
     prevSelectedRef.current = [...selectedBuildingIds];
   }, [selectedBuildingIds]);
+
+  // Handle demolished buildings filter update
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (map.current.getLayer('3d-buildings')) {
+      map.current.setFilter('3d-buildings', ['!', ['in', ['id'], ['literal', demolishedBuildingIds]]]);
+    }
+  }, [demolishedBuildingIds]);
 
   // Style switching
   useEffect(() => {

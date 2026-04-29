@@ -27,29 +27,29 @@ const UrbanHUD = ({ cityStats, lastActionImpact }) => {
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: stat.delay }}
             style={{ 
-              background: 'rgba(10, 11, 16, 0.85)', 
-              backdropFilter: 'blur(10px)', 
-              padding: '0.75rem 1.25rem', 
-              borderRadius: '12px', 
+              background: 'rgba(10, 11, 16, 0.9)', 
+              backdropFilter: 'blur(8px)', 
+              padding: '0.6rem 1rem', 
+              borderRadius: '10px', 
               border: '1px solid rgba(255,255,255,0.1)',
               display: 'flex',
               alignItems: 'center',
-              gap: '1rem',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              gap: '0.75rem',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
               pointerEvents: 'auto',
-              minWidth: '180px'
+              minWidth: '150px'
             }}
           >
             <div style={{ 
-              width: '36px', 
-              height: '36px', 
-              borderRadius: '8px', 
+              width: '32px', 
+              height: '32px', 
+              borderRadius: '6px', 
               background: 'rgba(255,255,255,0.05)', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center' 
             }}>
-              {stat.icon}
+              {React.cloneElement(stat.icon, { size: 16 })}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: '0.5rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>{stat.label}</span>

@@ -14,8 +14,6 @@ const AdminSidebar = ({
   aiSuggestion, 
   timeHorizon, 
   setTimeHorizon, 
-  activePriority, 
-  setActivePriority,
   advisorLog,
   advisorQuery,
   setAdvisorQuery,
@@ -40,6 +38,8 @@ const AdminSidebar = ({
   setIsSidebarCollapsed,
   isDemolishMode,
   setIsDemolishMode,
+  selectedBuildings = [],
+  handleDemolishSelected,
   aiPolicyScore,
   isAnalyzingPolicy,
   handleAnalyzePolicy,
@@ -139,15 +139,6 @@ const AdminSidebar = ({
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
 
 
-              <div className="panel-section" style={{ marginBottom: '2rem' }}>
-                <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}><Target size={14} /> STRATEGIC PRIORITY</span>
-                <select value={activePriority} onChange={e => setActivePriority(e.target.value)} style={{ width: '100%', marginTop: '1rem', padding: '0.75rem', background: 'rgba(0,0,0,0.03)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.7rem' }}>
-                  <option value="balanced">BALANCED (CITY STABILITY)</option>
-                  <option value="safety">MINIMIZE ACCIDENTS (EMS FOCUS)</option>
-                  <option value="economy">MAXIMIZE GROWTH (TRAFFIC PRIORITY)</option>
-                  <option value="green">NET ZERO (EMISSIONS FOCUS)</option>
-                </select>
-              </div>
 
               {/* PRIORITY DEMANDS INTELLIGENCE TABLE */}
               <div className="panel-section" style={{ marginBottom: '2rem' }}>
@@ -172,15 +163,15 @@ const AdminSidebar = ({
                     <tbody>
                       {[
                         { rank: 1, demand: 'Road & Pothole Repair', urgency: 'CRITICAL', urgencyColor: '#ef4444', source: '📋 Reports + 📱 Social', affected: '~1.2L citizens', bg: 'rgba(239,68,68,0.04)' },
-                        { rank: 2, demand: 'Traffic Signal Modernization', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '📋 Reports + 👮 Officers', affected: '~85K commuters', bg: 'rgba(245,158,11,0.04)' },
-                        { rank: 3, demand: 'Stormwater Drain Expansion', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '🤖 AI Predict + 👮 Officers', affected: '~2.1L residents', bg: 'rgba(245,158,11,0.04)' },
-                        { rank: 4, demand: 'Public Transit Coverage', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📱 Social + 📋 Reports', affected: '~3.5L daily', bg: 'rgba(37,99,235,0.03)' },
-                        { rank: 5, demand: 'Streetlight Installation', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📋 Reports + 👮 Officers', affected: '~60K residents', bg: 'rgba(37,99,235,0.03)' },
-                        { rank: 6, demand: 'Garbage Collection Frequency', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📱 Social + 📋 Reports', affected: '~1.8L households', bg: 'rgba(37,99,235,0.03)' },
-                        { rank: 7, demand: 'Public Healthcare Access', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '👮 Officers + 🤖 AI', affected: '~4.2L citizens', bg: 'rgba(245,158,11,0.04)' },
-                        { rank: 8, demand: 'Affordable Housing', urgency: 'CRITICAL', urgencyColor: '#ef4444', source: '📱 Social + 👮 Officers', affected: '~90K families', bg: 'rgba(239,68,68,0.04)' },
-                        { rank: 9, demand: 'Park & Green Space Development', urgency: 'LOW', urgencyColor: '#10b981', source: '📱 Social + 🤖 AI', affected: '~2.5L residents', bg: 'rgba(16,185,129,0.04)' },
-                        { rank: 10, demand: 'Water Supply Reliability', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '📋 Reports + 👮 Officers', affected: '~1.5L households', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 2, demand: 'Affordable Housing', urgency: 'CRITICAL', urgencyColor: '#ef4444', source: '📱 Social + 👮 Officers', affected: '~90K families', bg: 'rgba(239,68,68,0.04)' },
+                        { rank: 3, demand: 'Traffic Signal Modernization', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '📋 Reports + 👮 Officers', affected: '~85K commuters', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 4, demand: 'Stormwater Drain Expansion', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '🤖 AI Predict + 👮 Officers', affected: '~2.1L residents', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 5, demand: 'Public Healthcare Access', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '👮 Officers + 🤖 AI', affected: '~4.2L citizens', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 6, demand: 'Water Supply Reliability', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '📋 Reports + 👮 Officers', affected: '~1.5L households', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 7, demand: 'Public Transit Coverage', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📱 Social + 📋 Reports', affected: '~3.5L daily', bg: 'rgba(37,99,235,0.03)' },
+                        { rank: 8, demand: 'Streetlight Installation', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📋 Reports + 👮 Officers', affected: '~60K residents', bg: 'rgba(37,99,235,0.03)' },
+                        { rank: 9, demand: 'Garbage Collection Frequency', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📱 Social + 📋 Reports', affected: '~1.8L households', bg: 'rgba(37,99,235,0.03)' },
+                        { rank: 10, demand: 'Park & Green Space Development', urgency: 'LOW', urgencyColor: '#10b981', source: '📱 Social + 🤖 AI', affected: '~2.5L residents', bg: 'rgba(16,185,129,0.04)' },
                       ].map(row => (
                         <tr key={row.rank} style={{ background: row.bg, borderBottom: '1px solid var(--glass-border)', transition: 'background 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(37,99,235,0.08)'} onMouseLeave={e => e.currentTarget.style.background = row.bg}>
                           <td style={{ padding: '0.55rem 0.6rem', fontWeight: 900, color: 'var(--accent)' }}>{row.rank}</td>
@@ -263,11 +254,17 @@ const AdminSidebar = ({
                     <Hammer size={16} color="var(--accent)" /> INVENTORY
                   </div>
                   <button 
-                    onClick={() => setIsDemolishMode(!isDemolishMode)}
-                    title={isDemolishMode ? 'Demolish Mode Active' : 'Toggle Demolish Mode'}
+                    onClick={() => {
+                      if (selectedBuildings.length > 0) {
+                        handleDemolishSelected();
+                      } else {
+                        setIsDemolishMode(!isDemolishMode);
+                      }
+                    }}
+                    title={selectedBuildings.length > 0 ? `Demolish ${selectedBuildings.length} Selected` : (isDemolishMode ? 'Demolish Mode Active' : 'Toggle Demolish Mode')}
                     style={{
-                      background: isDemolishMode ? 'rgba(239, 68, 68, 0.12)' : 'rgba(0, 0, 0, 0.04)',
-                      border: isDemolishMode ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--glass-border)',
+                      background: selectedBuildings.length > 0 ? 'rgba(239, 68, 68, 0.2)' : (isDemolishMode ? 'rgba(239, 68, 68, 0.12)' : 'rgba(0, 0, 0, 0.04)'),
+                      border: (selectedBuildings.length > 0 || isDemolishMode) ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--glass-border)',
                       borderRadius: '8px',
                       width: '34px',
                       height: '34px',
@@ -279,13 +276,13 @@ const AdminSidebar = ({
                       flexShrink: 0
                     }}
                     onMouseEnter={(e) => {
-                      if (!isDemolishMode) e.currentTarget.style.background = 'rgba(239,68,68,0.06)';
+                      if (!isDemolishMode && selectedBuildings.length === 0) e.currentTarget.style.background = 'rgba(239,68,68,0.06)';
                     }}
                     onMouseLeave={(e) => {
-                      if (!isDemolishMode) e.currentTarget.style.background = 'rgba(0, 0, 0, 0.04)';
+                      if (!isDemolishMode && selectedBuildings.length === 0) e.currentTarget.style.background = 'rgba(0, 0, 0, 0.04)';
                     }}
                   >
-                    <Trash2 size={15} color={isDemolishMode ? 'var(--danger)' : 'var(--text-secondary)'} />
+                    <Trash2 size={15} color={(selectedBuildings.length > 0 || isDemolishMode) ? 'var(--danger)' : 'var(--text-secondary)'} />
                   </button>
                 </div>
                 

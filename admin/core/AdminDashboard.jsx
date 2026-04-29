@@ -41,7 +41,6 @@ const AdminDashboard = () => {
   const [isRainy, setIsRainy] = useState(false);
   const [floodLevel, setFloodLevel] = useState(0);
   const [timeHorizon, setTimeHorizon] = useState('present');
-  const [activePriority, setActivePriority] = useState('balanced');
   const [globalConfidence, setGlobalConfidence] = useState(82);
   const [aiSuggestion, setAiSuggestion] = useState(null);
   const [advisorLog, setAdvisorLog] = useState([{ role: 'ai', content: 'SYSTEM_READY. Awaiting directives.' }]);
@@ -69,13 +68,17 @@ const AdminDashboard = () => {
   const [isDemolishMode, setIsDemolishMode] = useState(false);
   const [selectedBuildings, setSelectedBuildings] = useState([]);
   const [selectedGridCell, setSelectedGridCell] = useState(null);
+  const [demolishedBuildingIds, setDemolishedBuildingIds] = useState([]);
+  const [transportStep, setTransportStep] = useState(0); // 0: idle, 1: start selected
+  const [placementStart, setPlacementStart] = useState(null);
+  const [customHeight, setCustomHeight] = useState(10);
 
   const [viewState, setViewState] = useState({
     longitude: 77.5912, latitude: 12.9797, zoom: 14, pitch: 55, bearing: 0
   });
 
   // GAME ENGINE STATE
-  const [cityStats, setCityStats] = useState({ prosperity: 1250, happiness: 72, population: 45000, level: 12 });
+  const [cityStats, setCityStats] = useState({ prosperity: 1250, happiness: 72, population: 45000 });
   const [lastActionImpact, setLastActionImpact] = useState(null);
   const impactTimeout = useRef(null);
 
@@ -96,6 +99,11 @@ const AdminDashboard = () => {
       happinessChange = -10;
       impactText = `Demolished ${building.name}. Citizen displacement detected. Utility grid temporarily unstable.`;
       scoreBonus = -100;
+      
+      // Add to demolished list to hide from map
+      setDemolishedBuildingIds(prev => [...prev, building.id]);
+      // Remove from selected list
+      setSelectedBuildings(prev => prev.filter(b => b.id !== building.id));
     } else {
       // Action Type is likely an asset name like 'education'
       const assetName = actionType.toUpperCase();
@@ -138,6 +146,16 @@ const AdminDashboard = () => {
       text: impactText,
       timestamp: new Date().toLocaleTimeString()
     });
+  };
+
+  const handleDemolishSelected = () => {
+    if (selectedBuildings.length === 0) return;
+    
+    selectedBuildings.forEach(building => {
+      handleBuildingGameAction(building, 'DEMOLISH');
+    });
+    
+    setSelectedBuildings([]);
   };
 
   useEffect(() => {
@@ -208,40 +226,10 @@ const AdminDashboard = () => {
       radiusPixels: 70, 
       opacity: 0.6
     }) : null,
-    new ColumnLayer({
-      id: 'holographic-stat-pillars',
-      data: [
-        { position: [77.5912, 12.9797, 0], value: cityStats.prosperity, color: [37, 99, 235], label: 'PROSPERITY' },
-        { position: [77.5930, 12.9810, 0], value: cityStats.happiness * 10, color: [236, 72, 153], label: 'HAPPINESS' },
-        { position: [77.5895, 12.9815, 0], value: cityStats.population / 100, color: [16, 185, 129], label: 'POPULATION' }
-      ],
-      getFillColor: d => [...d.color, 180],
-      getElevation: d => d.value,
-      radius: 40,
-      extruded: true,
-      pickable: false,
-    }),
-    new TextLayer({
-      id: 'holographic-stat-labels',
-      data: [
-        { position: [77.5912, 12.9797, cityStats.prosperity + 50], text: `PROSPERITY\n${cityStats.prosperity.toLocaleString()}`, color: [37, 99, 235] },
-        { position: [77.5930, 12.9810, cityStats.happiness * 10 + 50], text: `HAPPINESS\n${cityStats.happiness}%`, color: [236, 72, 153] },
-        { position: [77.5895, 12.9815, cityStats.population / 100 + 50], text: `POPULATION\n${cityStats.population.toLocaleString()}`, color: [16, 185, 129] }
-      ],
-      getPosition: d => d.position,
-      getText: d => d.text,
-      getSize: 24,
-      getColor: d => [...d.color, 255],
-      getAngle: 0,
-      getTextAnchor: 'middle',
-      getAlignmentBaseline: 'bottom',
-      fontWeight: 'bold',
-      outlineWidth: 2,
-      outlineColor: [0, 0, 0, 150]
-    }),
+
     new ColumnLayer({
       id: 'placed-assets-layer',
-      data: placedAssets,
+      data: placedAssets.filter(d => d.lngLat),
       getPosition: d => [d.lngLat.lng, d.lngLat.lat],
       getFillColor: d => d.color || [255, 255, 255],
       getElevation: d => d.height || 10,
@@ -254,6 +242,15 @@ const AdminDashboard = () => {
           setPlacedAssets(prev => prev.filter(p => p.id !== object.id));
         }
       }
+    }),
+    new LineLayer({
+      id: 'transport-lines-layer',
+      data: placedAssets.filter(d => d.startLngLat && d.endLngLat),
+      getSourcePosition: d => [d.startLngLat.lng, d.startLngLat.lat, d.height],
+      getTargetPosition: d => [d.endLngLat.lng, d.endLngLat.lat, d.height],
+      getColor: d => d.color || [37, 99, 235],
+      getWidth: 8,
+      pickable: true
     }),
     new ScatterplotLayer({
       id: 'street-light-glow',
@@ -506,8 +503,36 @@ const AdminDashboard = () => {
           }
         }}
         selectedBuildingIds={selectedBuildings.map(b => b.id)}
+        demolishedBuildingIds={demolishedBuildingIds}
         gridData={gridData}
-        onGridClick={(id) => setSelectedGridCell(id)}
+        onGridClick={(cell) => {
+          const cellId = typeof cell === 'object' ? cell.id : cell;
+          setSelectedGridCell(cellId);
+          
+          if (assetToPlace && ASSET_TEMPLATES[assetToPlace]?.group === 'Transport') {
+            const lngLat = cell.lngLat;
+            if (transportStep === 0) {
+              setPlacementStart(lngLat);
+              setTransportStep(1);
+              alert('START POINT SET. Now select the END POINT.');
+            } else {
+              const newAsset = { 
+                id: Date.now(), 
+                type: assetToPlace, 
+                startLngLat: placementStart, 
+                endLngLat: lngLat, 
+                height: customHeight,
+                color: ASSET_TEMPLATES[assetToPlace].color,
+                group: 'Transport' 
+              };
+              setPlacedAssets(prev => [...prev, newAsset]);
+              setTransportStep(0);
+              setPlacementStart(null);
+              setAssetToPlace(null);
+              alert('TRANSPORT ASSET DEPLOYED.');
+            }
+          }
+        }}
         selectedGridCellId={selectedGridCell}
       >
         {isSplitScreen && <div className="split-divider" />}
@@ -526,9 +551,6 @@ const AdminDashboard = () => {
         aiSuggestion={aiSuggestion}
         timeHorizon={timeHorizon}
         setTimeHorizon={setTimeHorizon}
-        activePriority={activePriority}
-        setActivePriority={setActivePriority}
-        advisorLog={advisorLog}
         advisorQuery={advisorQuery}
         setAdvisorQuery={setAdvisorQuery}
         handleAskAdvisor={handleAskAdvisor}
@@ -561,6 +583,8 @@ const AdminDashboard = () => {
         setIsSidebarCollapsed={setIsSidebarCollapsed}
         isDemolishMode={isDemolishMode}
         setIsDemolishMode={setIsDemolishMode}
+        selectedBuildings={selectedBuildings}
+        handleDemolishSelected={handleDemolishSelected}
         sentimentData={sentimentData}
         policyLocationPicking={policyLocationPicking}
         setPolicyLocationPicking={setPolicyLocationPicking}
@@ -586,6 +610,8 @@ const AdminDashboard = () => {
         setActiveSmartZones={setActiveSmartZones}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
       />
+
+      <UrbanHUD cityStats={cityStats} lastActionImpact={lastActionImpact} />
 
       <PublicRequestDossier 
         selectedRequest={selectedRequest} 
