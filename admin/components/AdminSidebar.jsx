@@ -186,22 +186,45 @@ const AdminSidebar = ({
                 </div>
               </div>
 
-              {/* 6. GLOBAL BROADCAST */}
+              {/* 6. STRATEGIC POLICY HUB */}
               <div className="panel-section">
                 <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
-                  <Megaphone size={14} /> STRATEGIC DIRECTIVE
+                  <FileText size={14} /> STRATEGIC_POLICY_HUB
                 </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem', padding: '1.25rem', background: 'rgba(37,99,235,0.02)', borderRadius: '12px', border: '1px solid var(--accent-glass)' }}>
-                  <div style={{ marginBottom: '0.25rem' }}>
-                    <label style={{ fontSize: '0.55rem', fontWeight: 900, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>DIRECTIVE_TITLE</label>
-                    <input className="chat-mini" placeholder="e.g. MONSOON_ALERT_V4" value={policyForm.policy} onChange={e => setPolicyForm({...policyForm, policy: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--glass-border)', fontSize: '0.7rem' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem', padding: '1rem', background: '#ffffff', borderRadius: '12px', border: '1px solid var(--glass-border)', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                  
+                  {/* Title & Location */}
+                  <input className="chat-mini" placeholder="Policy Title (e.g., Underground Metro Extension)" value={policyForm.title || ''} onChange={e => setPolicyForm({...policyForm, title: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem', color: '#333' }} />
+                  <input className="chat-mini" placeholder="Target Location" value={policyForm.location || ''} onChange={e => setPolicyForm({...policyForm, location: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem', color: '#333' }} />
+                  
+                  {/* Budget & Timeline */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <input className="chat-mini" placeholder="Budget (₹)" value={policyForm.budget || ''} onChange={e => setPolicyForm({...policyForm, budget: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem', color: '#333' }} />
+                    <input className="chat-mini" placeholder="Timeline (Months)" value={policyForm.duration || ''} onChange={e => setPolicyForm({...policyForm, duration: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem', color: '#333' }} />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.55rem', fontWeight: 900, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>URBAN_IMPACT_RATIONALE</label>
-                    <textarea className="chat-mini" placeholder="State the purpose of this broadcast..." value={policyForm.purpose} onChange={e => setPolicyForm({...policyForm, purpose: e.target.value})} style={{ width: '100%', minHeight: '80px', padding: '0.6rem', borderRadius: '8px', border: '1px solid var(--glass-border)', fontSize: '0.7rem', resize: 'none' }} />
+
+                  {/* Impact Projections Box */}
+                  <div style={{ padding: '1rem', background: 'rgba(37,99,235,0.03)', borderRadius: '12px', border: '1px solid rgba(37,99,235,0.2)', marginTop: '0.25rem' }}>
+                    <span style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--accent)', display: 'block', marginBottom: '0.75rem', letterSpacing: '0.5px' }}>IMPACT_PROJECTIONS</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <input className="chat-mini" placeholder="Traffic Disruption Estimate" value={policyForm.impactTraffic || ''} onChange={e => setPolicyForm({...policyForm, impactTraffic: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: 'none', background: '#fff', fontSize: '0.7rem', color: '#333', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }} />
+                      <input className="chat-mini" placeholder="Underground Utilities Risk" value={policyForm.impactUnderground || ''} onChange={e => setPolicyForm({...policyForm, impactUnderground: e.target.value})} style={{ width: '100%', padding: '0.6rem', borderRadius: '6px', border: 'none', background: '#fff', fontSize: '0.7rem', color: '#333', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }} />
+                    </div>
                   </div>
-                  <button className="action-btn" onClick={() => handleAction(handleBroadcastPolicy)} disabled={isBroadcasting} style={{ background: 'var(--accent)', marginTop: '0.5rem' }}>
-                    {isBroadcasting ? <Loader2 className="spin" size={14} /> : 'DEPLOY CITY_WIDE DIRECTIVE'}
+
+                  {/* Expected Outcome */}
+                  <textarea className="chat-mini" placeholder="Expected Outcome & ROI..." value={policyForm.outcome || ''} onChange={e => setPolicyForm({...policyForm, outcome: e.target.value})} style={{ width: '100%', minHeight: '80px', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem', color: '#333', resize: 'none', marginTop: '0.25rem' }} />
+
+                  {/* File Upload Option */}
+                  <div style={{ position: 'relative', marginTop: '0.25rem' }}>
+                    <input type="file" id="policy-doc-upload" style={{ display: 'none' }} onChange={(e) => console.log('File selected:', e.target.files[0])} />
+                    <label htmlFor="policy-doc-upload" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px dashed var(--accent)', background: 'rgba(37,99,235,0.02)', color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(37,99,235,0.08)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(37,99,235,0.02)'}>
+                      <UploadCloud size={16} /> ATTACH PROJECT DOSSIER / CAD FILES
+                    </label>
+                  </div>
+
+                  <button className="action-btn" onClick={() => handleAction(handleBroadcastPolicy)} disabled={isBroadcasting} style={{ background: 'var(--accent)', marginTop: '0.5rem', height: '45px', fontSize: '0.75rem', borderRadius: '8px' }}>
+                    {isBroadcasting ? <Loader2 className="spin" size={16} /> : 'ANALYZE & DEPLOY DIRECTIVE'}
                   </button>
                 </div>
               </div>
@@ -211,80 +234,77 @@ const AdminSidebar = ({
           {activeCategory === 'builder' && (
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
               <div style={{ 
-                background: '#C6C6C6', 
-                borderTop: '4px solid #FFFFFF', 
-                borderLeft: '4px solid #FFFFFF', 
-                borderBottom: '4px solid #555555', 
-                borderRight: '4px solid #555555',
-                padding: '1rem',
+                background: 'rgba(255, 255, 255, 0.85)', 
+                backdropFilter: 'blur(12px)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '16px',
+                padding: '1.25rem',
                 marginBottom: '2rem',
-                fontFamily: '"Courier New", Courier, monospace',
-                imageRendering: 'pixelated',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                boxShadow: '0 8px 32px rgba(37, 99, 235, 0.08)'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <div style={{ 
-                    color: '#373737', 
-                    fontSize: '1rem', 
-                    fontWeight: 'bold', 
+                    color: 'var(--text-primary)', 
+                    fontSize: '0.9rem', 
+                    fontWeight: 800, 
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    textShadow: '1px 1px 0px rgba(255,255,255,0.8)'
+                    letterSpacing: '1px'
                   }}>
-                    <Hammer size={18} /> INVENTORY
+                    <Hammer size={18} color="var(--accent)" /> INFRASTRUCTURE_INVENTORY
                   </div>
                   <button 
                     onClick={() => setIsDemolishMode(!isDemolishMode)}
                     style={{
-                      background: isDemolishMode ? '#ef4444' : '#C6C6C6',
-                      borderTop: isDemolishMode ? '2px solid #555555' : '2px solid #FFFFFF',
-                      borderLeft: isDemolishMode ? '2px solid #555555' : '2px solid #FFFFFF',
-                      borderBottom: isDemolishMode ? '2px solid #FFFFFF' : '2px solid #555555',
-                      borderRight: isDemolishMode ? '2px solid #FFFFFF' : '2px solid #555555',
-                      padding: '4px 10px',
-                      fontSize: '0.6rem',
-                      fontWeight: 'bold',
-                      color: isDemolishMode ? '#FFFFFF' : '#373737',
+                      background: isDemolishMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 0, 0, 0.04)',
+                      border: isDemolishMode ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--glass-border)',
+                      borderRadius: '8px',
+                      padding: '6px 12px',
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      color: isDemolishMode ? 'var(--danger)' : 'var(--text-secondary)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.4rem',
                       cursor: 'pointer',
-                      fontFamily: '"Courier New", Courier, monospace'
+                      transition: 'all 0.2s ease',
+                      letterSpacing: '0.5px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isDemolishMode) e.currentTarget.style.background = 'rgba(0,0,0,0.08)';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isDemolishMode) e.currentTarget.style.background = 'rgba(0, 0, 0, 0.04)';
                     }}
                   >
-                    <Trash2 size={12} /> {isDemolishMode ? 'DEMOLISH_ON' : 'DEMOLISH_OFF'}
+                    <Trash2 size={12} /> {isDemolishMode ? 'DEMOLISH_ACTIVE' : 'DEMOLISH_OFF'}
                   </button>
                 </div>
                 
                 {['Buildings', 'Transport', 'Energy'].map(groupName => {
                   const assets = Object.entries(ASSET_TEMPLATES).filter(([_, a]) => a.group === groupName);
                   if (assets.length === 0) return null;
-                  
-                  // Calculate padding rows to make it look full
-                  const totalSlots = Math.max(8, Math.ceil(assets.length / 4) * 4);
-                  const emptySlots = totalSlots - assets.length;
 
                   return (
                     <div key={groupName} style={{ marginBottom: '1.5rem' }}>
                       <h4 style={{ 
-                        fontSize: '0.75rem', 
-                        color: '#373737', 
-                        marginBottom: '0.5rem',
-                        textShadow: '1px 1px 0px rgba(255,255,255,0.8)',
-                        fontWeight: 'bold',
-                        letterSpacing: '1px'
-                      }}>{groupName.toUpperCase()}</h4>
+                        fontSize: '0.65rem', 
+                        color: 'var(--text-secondary)', 
+                        marginBottom: '0.75rem',
+                        fontWeight: 800,
+                        letterSpacing: '1px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        {groupName.toUpperCase()}
+                        <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
+                      </h4>
                       <div style={{ 
                         display: 'grid', 
                         gridTemplateColumns: 'repeat(4, 1fr)', 
-                        gap: '2px',
-                        background: '#8B8B8B',
-                        padding: '6px',
-                        borderTop: '3px solid #373737',
-                        borderLeft: '3px solid #373737',
-                        borderBottom: '3px solid #FFFFFF',
-                        borderRight: '3px solid #FFFFFF'
+                        gap: '0.5rem'
                       }}>
                         {assets.map(([name, asset]) => {
                           const isActive = assetToPlace === name;
@@ -302,60 +322,54 @@ const AdminSidebar = ({
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 cursor: 'grab', 
-                                background: '#8B8B8B',
-                                borderTop: isActive ? '2px solid #FFFFFF' : '2px solid #373737',
-                                borderLeft: isActive ? '2px solid #FFFFFF' : '2px solid #373737',
-                                borderBottom: isActive ? '2px solid #FFFFFF' : '2px solid #FFFFFF',
-                                borderRight: isActive ? '2px solid #FFFFFF' : '2px solid #FFFFFF',
-                                outline: isActive ? '2px solid #FFFFFF' : 'none',
-                                outlineOffset: '-2px',
+                                background: isActive ? 'rgba(37, 99, 235, 0.1)' : '#ffffff',
+                                border: isActive ? '1.5px solid var(--accent)' : '1px solid #e2e8f0',
+                                borderRadius: '10px',
                                 position: 'relative',
-                                zIndex: isActive ? 10 : 1,
-                                padding: '2px'
+                                padding: '4px',
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: isActive ? '0 4px 12px rgba(37, 99, 235, 0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
+                                transform: isActive ? 'translateY(-2px)' : 'none'
                               }}
                               onMouseEnter={(e) => {
-                                if (!isActive) e.currentTarget.style.background = '#999999';
+                                if (!isActive) {
+                                  e.currentTarget.style.transform = 'translateY(-2px)';
+                                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)';
+                                  e.currentTarget.style.borderColor = 'var(--accent-glass)';
+                                }
                               }}
                               onMouseLeave={(e) => {
-                                if (!isActive) e.currentTarget.style.background = '#8B8B8B';
+                                if (!isActive) {
+                                  e.currentTarget.style.transform = 'none';
+                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                                  e.currentTarget.style.borderColor = '#e2e8f0';
+                                }
                               }}
                             >
-                              {isActive && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.2)' }} />}
                               <div style={{ 
-                                color: '#373737', 
+                                color: isActive ? 'var(--accent)' : 'var(--text-secondary)', 
                                 transform: isActive ? 'scale(1.1)' : 'scale(1)',
-                                transition: 'transform 0.1s',
-                                filter: 'drop-shadow(1px 1px 0px rgba(255,255,255,0.5))',
-                                marginBottom: '2px'
+                                transition: 'transform 0.2s ease',
+                                marginBottom: '4px'
                               }}>
                                 {asset.icon}
                               </div>
                               <span style={{ 
-                                fontSize: '0.35rem', 
-                                fontWeight: 'bold', 
-                                color: '#373737', 
+                                fontSize: '0.45rem', 
+                                fontWeight: 800, 
+                                color: isActive ? 'var(--accent)' : 'var(--text-primary)', 
                                 textAlign: 'center',
                                 lineClamp: 1,
                                 overflow: 'hidden',
                                 width: '100%',
                                 pointerEvents: 'none',
-                                textShadow: '0.5px 0.5px 0px rgba(255,255,255,0.5)'
+                                letterSpacing: '0.5px'
                               }}>
                                 {name.split('-')[0].toUpperCase()}
                               </span>
                             </div>
                           );
                         })}
-                        {Array.from({ length: emptySlots }).map((_, i) => (
-                          <div key={`empty-${i}`} style={{
-                            aspectRatio: '1/1',
-                            background: '#8B8B8B',
-                            borderTop: '2px solid #373737',
-                            borderLeft: '2px solid #373737',
-                            borderBottom: '2px solid #FFFFFF',
-                            borderRight: '2px solid #FFFFFF'
-                          }} />
-                        ))}
                       </div>
                     </div>
                   );
