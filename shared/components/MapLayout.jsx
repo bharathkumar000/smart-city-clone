@@ -70,17 +70,17 @@ const MapLayout = ({
     wireframe: true,
     filled: true,
     getElevation: d => d.properties.height || 15,
-    getFillColor: [255, 255, 255, 255],
-    getLineColor: [200, 210, 220, 150],
+    getFillColor: [70, 80, 95, 200], // Dark slate base color
+    getLineColor: [37, 99, 235, 100], // Blue wireframe
     lineWidthMinPixels: 1,
     pickable: true,
     autoHighlight: true,
-    highlightColor: [37, 99, 235, 200],
+    highlightColor: [255, 255, 255, 255], // White highlight on hover
     opacity: 1,
     material: {
-      ambient: 1.0,
-      diffuse: 0.0,
-      shininess: 0,
+      ambient: 0.4,
+      diffuse: 0.6,
+      shininess: 32,
       specularColor: [255, 255, 255]
     }
   });
