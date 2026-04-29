@@ -311,11 +311,22 @@ const AdminSidebar = ({
                         <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>100m</span>
                       </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.5)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
-                       <p style={{ fontSize: '0.55rem', color: 'var(--text-primary)', fontWeight: 800, textAlign: 'center' }}>
-                         {transportStep === 0 ? '👉 SELECT START POINT' : '🎯 SELECT END POINT'}
+                    <button 
+                      onClick={() => setTransportStep(0)}
+                      style={{ 
+                        width: '100%',
+                        background: transportStep === 0 ? 'rgba(37, 99, 235, 0.1)' : 'rgba(16, 185, 129, 0.1)', 
+                        padding: '0.75rem', 
+                        borderRadius: '8px', 
+                        border: `1px solid ${transportStep === 0 ? 'var(--accent)' : '#10b981'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                       <p style={{ fontSize: '0.55rem', color: transportStep === 0 ? 'var(--accent)' : '#10b981', fontWeight: 900, textAlign: 'center', margin: 0, letterSpacing: '1px' }}>
+                         {transportStep === 0 ? '👉 CLICK MAP TO SET START' : '🎯 CLICK MAP TO SET END'}
                        </p>
-                    </div>
+                    </button>
                   </div>
                 )}
                 

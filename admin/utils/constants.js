@@ -20,7 +20,9 @@ export const ASSET_TEMPLATES = {
   'filtration-plant': { group: 'Energy', icon: <Droplets size={16} />, cost: 45, height: 18, radius: 40, color: [6, 182, 212], impacts: { economic: 10, social: 25, environmental: 35 } },
   'bio-reserve': { group: 'Energy', icon: <Trees size={16} />, cost: 30, height: 8, radius: 50, color: [34, 197, 94], impacts: { economic: 5, social: 30, environmental: 80 } },
   'power-pylon': { group: 'Energy', icon: <Zap size={16} />, cost: 25, height: 35, radius: 10, color: [100, 116, 139], impacts: { economic: 15, social: 2, environmental: -5 } },
-  'street-light': { group: 'Energy', icon: <Zap size={16} />, cost: 5, height: 12, radius: 3, color: [255, 244, 0], impacts: { economic: 2, social: 10, environmental: -1 } }
+  'street-light': { group: 'Energy', icon: <Zap size={16} />, cost: 5, height: 12, radius: 3, color: [255, 244, 0], impacts: { economic: 2, social: 10, environmental: -1 } },
+  'gas-plant': { group: 'Energy', icon: <Warehouse size={16} />, cost: 250, height: 25, radius: 65, color: [249, 115, 22], impacts: { economic: 120, social: -10, environmental: -50 } },
+  'water-treatment': { group: 'Energy', icon: <Droplets size={16} />, cost: 180, height: 20, radius: 55, color: [37, 99, 235], impacts: { economic: 40, social: 60, environmental: 20 } }
 };
 
 export const CATEGORIES = {

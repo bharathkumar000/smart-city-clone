@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { ScatterplotLayer, ColumnLayer, LineLayer, PolygonLayer, TextLayer, IconLayer } from '@deck.gl/layers';
+import { ScatterplotLayer, ColumnLayer, LineLayer, PolygonLayer, TextLayer, IconLayer, PathLayer } from '@deck.gl/layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { TripsLayer } from '@deck.gl/geo-layers';
+import { COORDINATE_SYSTEM } from '@deck.gl/core';
 
 // SHARED
 import MapLayout from '../../shared/components/MapLayout';
@@ -73,6 +74,11 @@ const AdminDashboard = () => {
   const [transportStep, setTransportStep] = useState(0); // 0: idle, 1: start selected
   const [placementStart, setPlacementStart] = useState(null);
   const [customHeight, setCustomHeight] = useState(10);
+  const [utilitiesData, setUtilitiesData] = useState(null);
+
+  useEffect(() => {
+    axios.get('/data/bengaluru_utilities.json').then(res => setUtilitiesData(res.data));
+  }, []);
 
   const [viewState, setViewState] = useState({
     longitude: 77.5912, latitude: 12.9797, zoom: 14, pitch: 55, bearing: 0
@@ -223,6 +229,55 @@ const AdminDashboard = () => {
     return { type: 'FeatureCollection', features };
   }, []); // Remove dependencies to keep it perfectly fixed across the land
 
+  const utilityLayers = React.useMemo(() => {
+    if (!utilitiesData || !isXrayEnabled) return [];
+
+    const typeConfig = {
+      'WaterPipe': { color: [37, 99, 235], depth: -6, offset: -0.00003 },
+      'GasLine': { color: [249, 115, 22], depth: -8, offset: 0 },
+      'SewagePipe': { color: [250, 204, 21], depth: -12, offset: 0.00003 },
+      'ElectricityLine': { color: [255, 255, 255], depth: -4, offset: 0.00006 }
+    };
+
+    return [
+      // Glow Layer (Base)
+      new PathLayer({
+        id: 'utility-pipes-glow',
+        data: utilitiesData.features,
+        getPath: d => d.geometry.coordinates.map(p => {
+          const cfg = typeConfig[d.properties.type] || { depth: -5, offset: 0 };
+          return [p[0] + cfg.offset, p[1] + cfg.offset, cfg.depth];
+        }),
+        getColor: d => {
+          const c = (typeConfig[d.properties.type] || { color: [255, 255, 255] }).color;
+          return [...c, 80];
+        },
+        getWidth: 15,
+        widthMinPixels: 4,
+        blur: 1,
+        pickable: false
+      }),
+      // Core Pipe Layer (Solid)
+      new PathLayer({
+        id: 'utility-pipes-core',
+        data: utilitiesData.features,
+        getPath: d => d.geometry.coordinates.map(p => {
+          const cfg = typeConfig[d.properties.type] || { depth: -5, offset: 0 };
+          return [p[0] + cfg.offset, p[1] + cfg.offset, cfg.depth];
+        }),
+        getColor: d => (typeConfig[d.properties.type] || { color: [255, 255, 255] }).color,
+        getWidth: 4,
+        widthMinPixels: 1.5,
+        pickable: true,
+        onHover: ({ object }) => {
+          if (object) {
+            // Optional: Show utility health/pressure
+          }
+        }
+      })
+    ];
+  }, [utilitiesData, isXrayEnabled]);
+
   const flyTo = (lngLat) => {
     setViewState(prev => ({
       ...prev,
@@ -243,6 +298,8 @@ const AdminDashboard = () => {
       radiusPixels: 70, 
       opacity: 0.6
     }) : null,
+
+    ...utilityLayers,
 
     new ColumnLayer({
       id: 'placed-assets-layer',
@@ -278,6 +335,7 @@ const AdminDashboard = () => {
       opacity: 0.8,
       pickable: false
     }),
+
     new ScatterplotLayer({
       id: 'public-requests-layer',
       data: publicRequests,
@@ -567,14 +625,13 @@ ${aiPolicyReport.suggestions.map(s => `- ${s}`).join('\n')}
             if (transportStep === 0) {
               setPlacementStart(lngLat);
               setTransportStep(1);
-              alert('START POINT SET. Now select the END POINT.');
             } else {
               const newAsset = { 
                 id: Date.now(), 
                 type: assetToPlace, 
                 startLngLat: placementStart, 
                 endLngLat: lngLat, 
-                height: customHeight,
+                height: Math.max(customHeight, 5),
                 color: ASSET_TEMPLATES[assetToPlace].color,
                 group: 'Transport' 
               };
@@ -582,7 +639,6 @@ ${aiPolicyReport.suggestions.map(s => `- ${s}`).join('\n')}
               setTransportStep(0);
               setPlacementStart(null);
               setAssetToPlace(null);
-              alert('TRANSPORT ASSET DEPLOYED.');
             }
             return;
           }
@@ -610,17 +666,18 @@ ${aiPolicyReport.suggestions.map(s => `- ${s}`).join('\n')}
           
           if (assetToPlace && ASSET_TEMPLATES[assetToPlace]?.group === 'Transport') {
             const lngLat = cell.lngLat;
+            if (!lngLat) return;
+            
             if (transportStep === 0) {
               setPlacementStart(lngLat);
               setTransportStep(1);
-              alert('START POINT SET. Now select the END POINT.');
             } else {
               const newAsset = { 
                 id: Date.now(), 
                 type: assetToPlace, 
                 startLngLat: placementStart, 
                 endLngLat: lngLat, 
-                height: customHeight,
+                height: Math.max(customHeight, 5),
                 color: ASSET_TEMPLATES[assetToPlace].color,
                 group: 'Transport' 
               };
@@ -628,7 +685,6 @@ ${aiPolicyReport.suggestions.map(s => `- ${s}`).join('\n')}
               setTransportStep(0);
               setPlacementStart(null);
               setAssetToPlace(null);
-              alert('TRANSPORT ASSET DEPLOYED.');
             }
           }
         }}

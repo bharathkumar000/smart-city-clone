@@ -56,9 +56,16 @@ const MapLayout = ({
                 'case',
                 ['boolean', ['feature-state', 'selected'], false],
                 'rgba(37, 99, 235, 0.4)',
-                'rgba(255, 255, 255, 0.02)'
+                ['boolean', ['get', 'major'], false],
+                'rgba(37, 99, 235, 0.05)',
+                'rgba(255, 255, 255, 0.01)'
               ],
-              'fill-outline-color': 'rgba(255, 255, 255, 0.05)'
+              'fill-outline-color': [
+                'case',
+                ['boolean', ['get', 'major'], false],
+                'rgba(37, 99, 235, 0.2)',
+                'rgba(255, 255, 255, 0.05)'
+              ]
             }
           },
           
@@ -94,6 +101,7 @@ const MapLayout = ({
               'line-blur': 10
             }
           },
+          
           // 3D BUILDINGS — rendered natively inside MapLibre so they NEVER drift
           {
             id: '3d-buildings',
@@ -135,6 +143,7 @@ const MapLayout = ({
     map.current.on('load', () => {
       // Grid selection
       map.current.on('click', 'minecraft-grid', (e) => {
+        if (e.originalEvent._buildingClicked) return; // Prevent double trigger
         e.originalEvent._gridClicked = true; // Mark as grid click
         if (e.features.length > 0 && onGridClick) {
           const props = e.features[0].properties;
@@ -265,23 +274,32 @@ const MapLayout = ({
 
   // Style switching
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
-
-    const isSat = currentStyle === 'satellite';
-    const isHybrid = currentStyle === 'hybrid';
-    const isStreets = currentStyle === 'streets';
-
-    if (map.current.getLayer('satellite-tiles')) map.current.setLayoutProperty('satellite-tiles', 'visibility', (isSat && !isXrayEnabled) ? 'visible' : 'none');
-    if (map.current.getLayer('hybrid-tiles')) map.current.setLayoutProperty('hybrid-tiles', 'visibility', (isHybrid && !isXrayEnabled) ? 'visible' : 'none');
-    if (map.current.getLayer('street-tiles')) map.current.setLayoutProperty('street-tiles', 'visibility', (isStreets && !isXrayEnabled) ? 'visible' : 'none');
-    if (map.current.getLayer('xray-dark-tiles')) map.current.setLayoutProperty('xray-dark-tiles', 'visibility', isXrayEnabled ? 'visible' : 'none');
+    if (!map.current) return;
     
-    if (map.current.getLayer('utility-pipes')) map.current.setPaintProperty('utility-pipes', 'line-opacity', isXrayEnabled ? 0.8 : 0);
-    if (map.current.getLayer('utility-pipes-glow')) map.current.setPaintProperty('utility-pipes-glow', 'line-opacity', isXrayEnabled ? 0.4 : 0);
-    
-    // In X-ray mode, hide buildings entirely to show underground
-    if (map.current.getLayer('3d-buildings')) {
-      map.current.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', isXrayEnabled ? 0 : 0.88);
+    // Ensure the map is ready before manipulating layers
+    const updateVisibility = () => {
+      const isSat = currentStyle === 'satellite';
+      const isHybrid = currentStyle === 'hybrid';
+      const isStreets = currentStyle === 'streets';
+
+      if (map.current.getLayer('satellite-tiles')) map.current.setLayoutProperty('satellite-tiles', 'visibility', (isSat && !isXrayEnabled) ? 'visible' : 'none');
+      if (map.current.getLayer('hybrid-tiles')) map.current.setLayoutProperty('hybrid-tiles', 'visibility', (isHybrid && !isXrayEnabled) ? 'visible' : 'none');
+      if (map.current.getLayer('street-tiles')) map.current.setLayoutProperty('street-tiles', 'visibility', (isStreets && !isXrayEnabled) ? 'visible' : 'none');
+      if (map.current.getLayer('xray-dark-tiles')) {
+        map.current.setLayoutProperty('xray-dark-tiles', 'visibility', isXrayEnabled ? 'visible' : 'none');
+        map.current.setPaintProperty('xray-dark-tiles', 'raster-opacity', isXrayEnabled ? 0.15 : 0.8);
+      }
+      
+      // In X-ray mode, buildings become "ghostly" (transparent) to show underground corridors
+      if (map.current.getLayer('3d-buildings')) {
+        map.current.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', isXrayEnabled ? 0.05 : 0.88);
+      }
+    };
+
+    if (map.current.isStyleLoaded()) {
+      updateVisibility();
+    } else {
+      map.current.once('styledata', updateVisibility);
     }
   }, [currentStyle, isXrayEnabled]);
 
