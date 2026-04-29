@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { ScatterplotLayer, ColumnLayer, LineLayer, PolygonLayer } from '@deck.gl/layers';
+import { ScatterplotLayer, ColumnLayer, LineLayer, PolygonLayer, TextLayer, IconLayer } from '@deck.gl/layers';
 import { HeatmapLayer } from '@deck.gl/aggregation-layers';
 import { TripsLayer } from '@deck.gl/geo-layers';
 
@@ -155,35 +155,38 @@ const AdminDashboard = () => {
     return () => clearInterval(timerId);
   }, [isRainy, placedAssets]);
 
-  const generateGrid = () => {
-    const cells = [];
+  const gridData = React.useMemo(() => {
+    const features = [];
     const step = 0.0005; // ~50m cells
-    const range = 30; // Increased range for better coverage
+    const range = 35; // Expand range for better coverage
     
-    // Static anchoring: Round to the nearest 0.01 to create a "stable" local origin
-    // This prevents the grid from "following" the camera center every frame
     const anchorLng = Math.floor(viewState.longitude / 0.01) * 0.01;
     const anchorLat = Math.floor(viewState.latitude / 0.01) * 0.01;
 
+    let idCounter = 1;
     for (let x = -range; x <= range; x++) {
       for (let y = -range; y <= range; y++) {
         const lng = anchorLng + x * step;
         const lat = anchorLat + y * step;
-        cells.push({
-          id: `${lng.toFixed(5)},${lat.toFixed(5)}`,
-          lngLat: { lng, lat },
-          polygon: [
-            [lng, lat],
-            [lng + step, lat],
-            [lng + step, lat + step],
-            [lng, lat + step],
-            [lng, lat]
-          ]
+        features.push({
+          type: 'Feature',
+          id: idCounter++, 
+          properties: { id: idCounter - 1, lng, lat },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [[
+              [lng, lat],
+              [lng + step, lat],
+              [lng + step, lat + step],
+              [lng, lat + step],
+              [lng, lat]
+            ]]
+          }
         });
       }
     }
-    return cells;
-  };
+    return { type: 'FeatureCollection', features };
+  }, [viewState.longitude, viewState.latitude]);
 
   const flyTo = (lngLat) => {
     setViewState(prev => ({
@@ -197,20 +200,6 @@ const AdminDashboard = () => {
   };
 
   const layers = [
-    new PolygonLayer({
-      id: 'minecraft-grid-layer',
-      data: generateGrid(),
-      getPolygon: d => d.polygon,
-      stroked: true,
-      filled: true,
-      getLineColor: [255, 255, 255, 50],
-      getFillColor: d => selectedGridCell === d.id ? [37, 99, 235, 100] : [0, 0, 0, 0],
-      lineWidthMinPixels: 1,
-      pickable: true,
-      onClick: ({ object }) => {
-        if (object) setSelectedGridCell(object.id);
-      }
-    }),
     sentimentEnabled && sentimentData ? new HeatmapLayer({
       id: 'sentiment-heatmap', 
       data: sentimentData.points, 
@@ -219,6 +208,37 @@ const AdminDashboard = () => {
       radiusPixels: 70, 
       opacity: 0.6
     }) : null,
+    new ColumnLayer({
+      id: 'holographic-stat-pillars',
+      data: [
+        { position: [77.5912, 12.9797, 0], value: cityStats.prosperity, color: [37, 99, 235], label: 'PROSPERITY' },
+        { position: [77.5930, 12.9810, 0], value: cityStats.happiness * 10, color: [236, 72, 153], label: 'HAPPINESS' },
+        { position: [77.5895, 12.9815, 0], value: cityStats.population / 100, color: [16, 185, 129], label: 'POPULATION' }
+      ],
+      getFillColor: d => [...d.color, 180],
+      getElevation: d => d.value,
+      radius: 40,
+      extruded: true,
+      pickable: false,
+    }),
+    new TextLayer({
+      id: 'holographic-stat-labels',
+      data: [
+        { position: [77.5912, 12.9797, cityStats.prosperity + 50], text: `PROSPERITY\n${cityStats.prosperity.toLocaleString()}`, color: [37, 99, 235] },
+        { position: [77.5930, 12.9810, cityStats.happiness * 10 + 50], text: `HAPPINESS\n${cityStats.happiness}%`, color: [236, 72, 153] },
+        { position: [77.5895, 12.9815, cityStats.population / 100 + 50], text: `POPULATION\n${cityStats.population.toLocaleString()}`, color: [16, 185, 129] }
+      ],
+      getPosition: d => d.position,
+      getText: d => d.text,
+      getSize: 24,
+      getColor: d => [...d.color, 255],
+      getAngle: 0,
+      getTextAnchor: 'middle',
+      getAlignmentBaseline: 'bottom',
+      fontWeight: 'bold',
+      outlineWidth: 2,
+      outlineColor: [0, 0, 0, 150]
+    }),
     new ColumnLayer({
       id: 'placed-assets-layer',
       data: placedAssets,
@@ -486,6 +506,9 @@ const AdminDashboard = () => {
           }
         }}
         selectedBuildingIds={selectedBuildings.map(b => b.id)}
+        gridData={gridData}
+        onGridClick={(id) => setSelectedGridCell(id)}
+        selectedGridCellId={selectedGridCell}
       >
         {isSplitScreen && <div className="split-divider" />}
       </MapLayout>
@@ -563,8 +586,6 @@ const AdminDashboard = () => {
         setActiveSmartZones={setActiveSmartZones}
         setIsSidebarCollapsed={setIsSidebarCollapsed}
       />
-
-      <UrbanHUD cityStats={cityStats} lastActionImpact={lastActionImpact} />
 
       <PublicRequestDossier 
         selectedRequest={selectedRequest} 
