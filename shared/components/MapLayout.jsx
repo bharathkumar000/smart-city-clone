@@ -70,18 +70,18 @@ const MapLayout = ({
     wireframe: true,
     filled: true,
     getElevation: d => d.properties.height || 15,
-    getFillColor: [70, 80, 95, 200], // Dark slate base color
-    getLineColor: [37, 99, 235, 100], // Blue wireframe
+    getFillColor: [240, 243, 248, 255], // Clean white buildings
+    getLineColor: [60, 65, 75, 180], // Dark grey edge outlines to separate each building
     lineWidthMinPixels: 1,
     pickable: true,
     autoHighlight: true,
-    highlightColor: [255, 255, 255, 255], // White highlight on hover
-    opacity: 1,
+    highlightColor: [37, 99, 235, 180], // Blue glow on hover
+    opacity: 0.92,
     material: {
-      ambient: 0.4,
-      diffuse: 0.6,
-      shininess: 32,
-      specularColor: [255, 255, 255]
+      ambient: 0.35,
+      diffuse: 0.65,
+      shininess: 20,
+      specularColor: [200, 210, 230]
     }
   });
 

@@ -245,40 +245,39 @@ const AdminSidebar = ({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <div style={{ 
                     color: 'var(--text-primary)', 
-                    fontSize: '0.9rem', 
+                    fontSize: '0.85rem', 
                     fontWeight: 800, 
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
                     letterSpacing: '1px'
                   }}>
-                    <Hammer size={18} color="var(--accent)" /> INFRASTRUCTURE_INVENTORY
+                    <Hammer size={16} color="var(--accent)" /> INVENTORY
                   </div>
                   <button 
                     onClick={() => setIsDemolishMode(!isDemolishMode)}
+                    title={isDemolishMode ? 'Demolish Mode Active' : 'Toggle Demolish Mode'}
                     style={{
-                      background: isDemolishMode ? 'rgba(239, 68, 68, 0.1)' : 'rgba(0, 0, 0, 0.04)',
-                      border: isDemolishMode ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--glass-border)',
+                      background: isDemolishMode ? 'rgba(239, 68, 68, 0.12)' : 'rgba(0, 0, 0, 0.04)',
+                      border: isDemolishMode ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--glass-border)',
                       borderRadius: '8px',
-                      padding: '6px 12px',
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      color: isDemolishMode ? 'var(--danger)' : 'var(--text-secondary)',
+                      width: '34px',
+                      height: '34px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.4rem',
+                      justifyContent: 'center',
                       cursor: 'pointer',
                       transition: 'all 0.2s ease',
-                      letterSpacing: '0.5px'
+                      flexShrink: 0
                     }}
                     onMouseEnter={(e) => {
-                      if (!isDemolishMode) e.currentTarget.style.background = 'rgba(0,0,0,0.08)';
+                      if (!isDemolishMode) e.currentTarget.style.background = 'rgba(239,68,68,0.06)';
                     }}
                     onMouseLeave={(e) => {
                       if (!isDemolishMode) e.currentTarget.style.background = 'rgba(0, 0, 0, 0.04)';
                     }}
                   >
-                    <Trash2 size={12} /> {isDemolishMode ? 'DEMOLISH_ACTIVE' : 'DEMOLISH_OFF'}
+                    <Trash2 size={15} color={isDemolishMode ? 'var(--danger)' : 'var(--text-secondary)'} />
                   </button>
                 </div>
                 
