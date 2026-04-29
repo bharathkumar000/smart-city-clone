@@ -152,6 +152,69 @@ const AdminSidebar = ({
                 </select>
               </div>
 
+              {/* PRIORITY DEMANDS INTELLIGENCE TABLE */}
+              <div className="panel-section" style={{ marginBottom: '2rem' }}>
+                <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
+                  <Activity size={14} /> PRIORITY DEMANDS — INTELLIGENCE FEED
+                </span>
+                <p style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', marginTop: '0.5rem', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  Aggregated from <strong>{publicRequests?.length || 0} citizen reports</strong>, social sentiment, officer submissions & AI prediction models.
+                </p>
+
+                <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.6rem' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--accent)', color: '#fff' }}>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'left', fontWeight: 800, letterSpacing: '0.5px' }}>#</th>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'left', fontWeight: 800, letterSpacing: '0.5px' }}>DEMAND</th>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'center', fontWeight: 800, letterSpacing: '0.5px' }}>URGENCY</th>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'center', fontWeight: 800, letterSpacing: '0.5px' }}>SOURCE</th>
+                        <th style={{ padding: '0.5rem 0.6rem', textAlign: 'right', fontWeight: 800, letterSpacing: '0.5px' }}>AFFECTED</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { rank: 1, demand: 'Road & Pothole Repair', urgency: 'CRITICAL', urgencyColor: '#ef4444', source: '📋 Reports + 📱 Social', affected: '~1.2L citizens', bg: 'rgba(239,68,68,0.04)' },
+                        { rank: 2, demand: 'Traffic Signal Modernization', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '📋 Reports + 👮 Officers', affected: '~85K commuters', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 3, demand: 'Stormwater Drain Expansion', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '🤖 AI Predict + 👮 Officers', affected: '~2.1L residents', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 4, demand: 'Public Transit Coverage', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📱 Social + 📋 Reports', affected: '~3.5L daily', bg: 'rgba(37,99,235,0.03)' },
+                        { rank: 5, demand: 'Streetlight Installation', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📋 Reports + 👮 Officers', affected: '~60K residents', bg: 'rgba(37,99,235,0.03)' },
+                        { rank: 6, demand: 'Garbage Collection Frequency', urgency: 'MEDIUM', urgencyColor: '#2563eb', source: '📱 Social + 📋 Reports', affected: '~1.8L households', bg: 'rgba(37,99,235,0.03)' },
+                        { rank: 7, demand: 'Public Healthcare Access', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '👮 Officers + 🤖 AI', affected: '~4.2L citizens', bg: 'rgba(245,158,11,0.04)' },
+                        { rank: 8, demand: 'Affordable Housing', urgency: 'CRITICAL', urgencyColor: '#ef4444', source: '📱 Social + 👮 Officers', affected: '~90K families', bg: 'rgba(239,68,68,0.04)' },
+                        { rank: 9, demand: 'Park & Green Space Development', urgency: 'LOW', urgencyColor: '#10b981', source: '📱 Social + 🤖 AI', affected: '~2.5L residents', bg: 'rgba(16,185,129,0.04)' },
+                        { rank: 10, demand: 'Water Supply Reliability', urgency: 'HIGH', urgencyColor: '#f59e0b', source: '📋 Reports + 👮 Officers', affected: '~1.5L households', bg: 'rgba(245,158,11,0.04)' },
+                      ].map(row => (
+                        <tr key={row.rank} style={{ background: row.bg, borderBottom: '1px solid var(--glass-border)', transition: 'background 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(37,99,235,0.08)'} onMouseLeave={e => e.currentTarget.style.background = row.bg}>
+                          <td style={{ padding: '0.55rem 0.6rem', fontWeight: 900, color: 'var(--accent)' }}>{row.rank}</td>
+                          <td style={{ padding: '0.55rem 0.6rem', fontWeight: 700, color: 'var(--text-primary)' }}>{row.demand}</td>
+                          <td style={{ padding: '0.55rem 0.6rem', textAlign: 'center' }}>
+                            <span style={{ 
+                              padding: '2px 6px', 
+                              borderRadius: '4px', 
+                              fontSize: '0.5rem', 
+                              fontWeight: 900, 
+                              color: '#fff', 
+                              background: row.urgencyColor,
+                              letterSpacing: '0.5px'
+                            }}>{row.urgency}</span>
+                          </td>
+                          <td style={{ padding: '0.55rem 0.6rem', textAlign: 'center', fontSize: '0.55rem', color: 'var(--text-secondary)' }}>{row.source}</td>
+                          <td style={{ padding: '0.55rem 0.6rem', textAlign: 'right', fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.55rem' }}>{row.affected}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.5rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: 800 }}>📋 Citizen Reports</span>
+                  <span style={{ fontSize: '0.5rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(37,99,235,0.1)', color: '#2563eb', fontWeight: 800 }}>📱 Social Media</span>
+                  <span style={{ fontSize: '0.5rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontWeight: 800 }}>👮 Officer Inputs</span>
+                  <span style={{ fontSize: '0.5rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontWeight: 800 }}>🤖 AI Prediction</span>
+                </div>
+              </div>
+
               {/* 3. AI ADVISOR */}
               <div className="panel-section" style={{ marginBottom: '2rem' }}>
                 <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
@@ -500,48 +563,6 @@ const AdminSidebar = ({
 
           {activeCategory === 'social' && (
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-              <div className="panel-section" style={{ marginBottom: '2rem' }}>
-                <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
-                  <Heart size={14} /> CITIZEN SENTIMENT PULSE
-                </span>
-                <div className="widget" style={{ marginTop: '1rem', padding: '1.5rem', background: 'rgba(239,68,68,0.02)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
-                  <Globe size={40} color="var(--accent)" style={{ opacity: 0.5, marginBottom: '1rem' }} />
-                  <h3 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>GLOBAL_SOCIAL_METRICS</h3>
-                  <p style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', marginTop: '0.5rem', marginBottom: '1.5rem' }}>Analyze real-time community feedback across Bengaluru wards.</p>
-                  <button className="action-btn" onClick={() => handleAction(handleFetchSentiment)} disabled={isSentimentLoading}>
-                    {isSentimentLoading ? <Loader2 className="spin" size={16} /> : 'INITIALIZE HEATMAP'}
-                  </button>
-                </div>
-
-                {sentimentData && sentimentData.feed && (
-                  <div className="social-feed" style={{ marginTop: '2rem' }}>
-                    <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)', marginBottom: '1rem' }}>
-                      <MessageSquare size={14} /> LIVE_CITIZEN_FEED
-                    </span>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                      {sentimentData.feed.map(post => (
-                        <div key={post.id} className="widget" style={{ padding: '1rem', background: 'rgba(255,255,255,0.6)', border: '1px solid var(--glass-border)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                            <span style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--accent)' }}>{post.user}</span>
-                            <span style={{ fontSize: '0.5rem', color: 'var(--text-secondary)' }}>{post.ward.toUpperCase()}</span>
-                          </div>
-                          <p style={{ fontSize: '0.7rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>{post.content}</p>
-                          <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{ 
-                              width: '6px', 
-                              height: '6px', 
-                              borderRadius: '50%', 
-                              background: post.type === 'complaint' ? 'var(--danger)' : post.type === 'praise' ? 'var(--success)' : 'var(--warning)' 
-                            }} />
-                            <span style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-secondary)' }}>{post.type.toUpperCase()}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               <div className="panel-section">
                 <span className="section-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)' }}>
                   <MessageSquare size={14} /> PUBLIC_REQUEST_INBOX

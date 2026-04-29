@@ -25,16 +25,6 @@ const UrbanHUD = ({ cityStats, lastActionImpact }) => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Trophy size={18} color="#f59e0b" />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>CITY_LEVEL</span>
-              <span style={{ fontSize: '1rem', fontWeight: 900, color: '#fff' }}>LVL {cityStats.level}</span>
-            </div>
-          </div>
-
-          <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.1)' }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <TrendingUp size={18} color="var(--accent)" />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: '0.55rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', letterSpacing: '1px' }}>PROSPERITY</span>
